@@ -303,7 +303,32 @@ public class AdviceAndPointCut {
 
         while (iter.hasNext()) {
             EventDefinition event = iter.next();
-
+            MOPParameters params = event.getMOPParametersOnSpec();
+            boolean needsClose = false;
+            if (event.isCreationEvent()) {
+                ret += "if (locs.add(thisJoinPoint.getSourceLocation())) {\n";
+                for (MOPParameter param : params) {
+                    ret += "objs.add(System.identityHashCode(" + param.getName() + "));\n";
+                }
+                needsClose = true;
+            } else {
+                if (params.size() == 1) {
+                    ret += "if (objs.contains(System.identityHashCode(" + params.get(0).getName()+ "))) {\n";
+                    needsClose = true;
+                } else if (params.size() > 1) {
+                    ret += "if (objs.contains(System.identityHashCode(" + params.get(0).getName()+ ")) ";
+                    int i = 1;
+                    while (i < params.size()) {
+                        ret += " || objs.contains(System.identityHashCode(" + params.get(i).getName()+ ")) ";
+                        i++;
+                    }
+                    ret += ") {\n";
+                    for (MOPParameter param : params) {
+                        ret += "objs.add(System.identityHashCode(" + param.getName() + "));\n";
+                    }
+                    needsClose = true;
+                }
+            }
             AdviceBody advice = advices.get(event);
 
             if (advices.size() > 1) {
@@ -368,10 +393,14 @@ public class AdviceAndPointCut {
             if (countCond != null && countCond.length() != 0) {
                 ret += "}\n";
             }
+            if (needsClose) {
+                ret += "}\n";
+            }
         }
 
         if (aroundAdviceReturn != null)
             ret += aroundAdviceReturn;
+
 
         ret += "}\n";
 

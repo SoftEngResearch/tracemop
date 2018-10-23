@@ -68,8 +68,9 @@ public class CombinedAspect {
         String ret = "";
         ret += this.statManager.statClass();
         ret += "public aspect " + this.name +
-        " implements com.runtimeverification.rvmonitor.java.rt.RVMObject {\n";
-        
+            " implements com.runtimeverification.rvmonitor.java.rt.RVMObject {\n\n";
+        ret += "Set<Object> objs = new HashSet<Object>();\n";
+        ret += "Set<SourceLocation> locs = new HashSet<SourceLocation>();\n\n";
         // Constructor
         ret += "public " + this.name + "(){\n";
         

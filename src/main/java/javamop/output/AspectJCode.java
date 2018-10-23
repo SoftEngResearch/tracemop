@@ -96,7 +96,7 @@ class AspectJCode {
         ret += packageDecl;
         ret += "\n";
         ret += imports.toString().replaceAll("import javamoprt.*", "");
-
+        ret += "import org.aspectj.lang.reflect.*;\n";
         ret += "\n";
         
         if(!JavaMOPMain.options.emop) {
