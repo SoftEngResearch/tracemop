@@ -33,13 +33,13 @@ public aspect EnumMap_NonNullMonitorAspect implements com.runtimeverification.rv
 	static Condition EnumMap_NonNull_MOPLock_cond = EnumMap_NonNull_MOPLock.newCondition();
 
 	pointcut MOP_CommonPointCut() : !within(com.runtimeverification.rvmonitor.java.rt.RVMObject+) && !adviceexecution() && BaseAspect.notwithin();
-	pointcut EnumMap_NonNull_insertnull_12(Map m) : (call(* EnumMap.putAll(Map)) && args(m)) && MOP_CommonPointCut();
-	before (Map m) : EnumMap_NonNull_insertnull_12(m) {
+	pointcut EnumMap_NonNull_insertnull_16(Map m) : (call(* EnumMap.putAll(Map)) && args(m)) && MOP_CommonPointCut();
+	before (Map m) : EnumMap_NonNull_insertnull_16(m) {
 		EnumMap_NonNullRuntimeMonitor.insertnullEvent(m);
 	}
 
-	pointcut EnumMap_NonNull_insertnull_11(Object e) : (call(* EnumMap.put(Object, Object)) && args(e, ..)) && MOP_CommonPointCut();
-	before (Object e) : EnumMap_NonNull_insertnull_11(e) {
+	pointcut EnumMap_NonNull_insertnull_15(Object e) : (call(* EnumMap.put(Object, Object)) && args(e, ..)) && MOP_CommonPointCut();
+	before (Object e) : EnumMap_NonNull_insertnull_15(e) {
 		EnumMap_NonNullRuntimeMonitor.insertnullEvent(e);
 	}
 

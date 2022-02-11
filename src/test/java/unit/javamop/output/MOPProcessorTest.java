@@ -74,8 +74,6 @@ public class MOPProcessorTest {
         MOPProcessor processor = new MOPProcessor(this.aspectName);
         MOPNameSpace.init();
 
-        System.out.println(this.output_RVM_FilePath);
-
         String actualRVString = IOUtils.deleteNewLines(processor.generateRVFile(this.inputAST));
         actualRVString = Tool.changeIndentation(actualRVString, "", "\t");
         String expectedRVString = IOUtils.deleteNewLines(IOUtils.readFile(this.output_RVM_FilePath));

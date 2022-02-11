@@ -40,13 +40,13 @@ public aspect ProcessBuilder_NullKeyOrValueMonitorAspect implements com.runtimev
 		ProcessBuilder_NullKeyOrValueRuntimeMonitor.nullQueryEvent(map, o);
 	}
 
-	pointcut ProcessBuilder_NullKeyOrValue_nullPut_4(Map map, Map map2) : (call(* Map.putAll(Map)) && args(map2) && target(map)) && MOP_CommonPointCut();
-	before (Map map, Map map2) : ProcessBuilder_NullKeyOrValue_nullPut_4(map, map2) {
+	pointcut ProcessBuilder_NullKeyOrValue_nullPut_8(Map map, Map map2) : (call(* Map.putAll(Map)) && args(map2) && target(map)) && MOP_CommonPointCut();
+	before (Map map, Map map2) : ProcessBuilder_NullKeyOrValue_nullPut_8(map, map2) {
 		ProcessBuilder_NullKeyOrValueRuntimeMonitor.nullPutEvent(map, map2);
 	}
 
-	pointcut ProcessBuilder_NullKeyOrValue_nullPut_3(Map map, Object key, Object value) : (call(* Map.put(..)) && args(key, value) && target(map)) && MOP_CommonPointCut();
-	before (Map map, Object key, Object value) : ProcessBuilder_NullKeyOrValue_nullPut_3(map, key, value) {
+	pointcut ProcessBuilder_NullKeyOrValue_nullPut_7(Map map, Object key, Object value) : (call(* Map.put(..)) && args(key, value) && target(map)) && MOP_CommonPointCut();
+	before (Map map, Object key, Object value) : ProcessBuilder_NullKeyOrValue_nullPut_7(map, key, value) {
 		ProcessBuilder_NullKeyOrValueRuntimeMonitor.nullPutEvent(map, key, value);
 	}
 

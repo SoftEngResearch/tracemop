@@ -43,13 +43,13 @@ public aspect System_WrongKeyOrValueMonitorAspect implements com.runtimeverifica
 		System_WrongKeyOrValueRuntimeMonitor.nullQueryEvent(map, o);
 	}
 
-	pointcut System_WrongKeyOrValue_nullPut_8(Map map, Map map2) : (call(* Map.putAll(Map)) && args(map2) && target(map)) && MOP_CommonPointCut();
-	before (Map map, Map map2) : System_WrongKeyOrValue_nullPut_8(map, map2) {
+	pointcut System_WrongKeyOrValue_nullPut_4(Map map, Map map2) : (call(* Map.putAll(Map)) && args(map2) && target(map)) && MOP_CommonPointCut();
+	before (Map map, Map map2) : System_WrongKeyOrValue_nullPut_4(map, map2) {
 		System_WrongKeyOrValueRuntimeMonitor.nullPutEvent(map, map2);
 	}
 
-	pointcut System_WrongKeyOrValue_nullPut_7(Map map, Object key, Object value) : (call(* Map.put(..)) && args(key, value) && target(map)) && MOP_CommonPointCut();
-	before (Map map, Object key, Object value) : System_WrongKeyOrValue_nullPut_7(map, key, value) {
+	pointcut System_WrongKeyOrValue_nullPut_3(Map map, Object key, Object value) : (call(* Map.put(..)) && args(key, value) && target(map)) && MOP_CommonPointCut();
+	before (Map map, Object key, Object value) : System_WrongKeyOrValue_nullPut_3(map, key, value) {
 		System_WrongKeyOrValueRuntimeMonitor.nullPutEvent(map, key, value);
 	}
 
