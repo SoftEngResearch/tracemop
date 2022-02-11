@@ -1,6 +1,6 @@
 (
     cd /tmp
-    git clone git@github.com:javaparser/javaparser.git
+    git clone https://github.com/javaparser/javaparser.git
     (
         cd javaparser
         git co javaparser-parent-3.23.1
