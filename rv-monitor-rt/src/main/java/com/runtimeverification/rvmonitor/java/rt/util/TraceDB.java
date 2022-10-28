@@ -24,10 +24,12 @@ public class TraceDB {
 
     public TraceDB() {
         this.connection = getConnection();
+ 	 System.setProperty("dbFilePath", "/tmp/tracedb");
     }
 
     public TraceDB(String dbFilePath) {
         this.jdbcURL =  "jdbc:h2:" + dbFilePath + ";DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE";
+        System.setProperty("dbFilePath", dbFilePath);
         this.connection = getConnection();
     }
 
