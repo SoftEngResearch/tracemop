@@ -208,10 +208,12 @@ public class TraceDB {
         TraceDB traceDB = new TraceDB();
         traceDB.createTable();
         System.out.println("Start: " + new Date().toString());
-//        for (int i = 0; i < 10000000; i++) {
-            traceDB.put("fy#"+1, "[a,b,b,c]", 4);
-            traceDB.put("fy#"+ (10000000), "[a,b,b,c,d,e]", 6);
-//        }
+        traceDB.put("fy#"+1, "[a,b,b,c]", 4);
+        traceDB.put("fy#"+2, "[a,b,b,c,d,e]", 6);
+        traceDB.put("fy#"+3, "[a,b,b,c]", 4);
+        for (int i = 4; i < 1000000; i++) {
+            traceDB.put("fy#"+i, "[a,b,b,c,d,e]", 6);
+        }
         System.out.println("Filled: " + new Date().toString());
         System.out.println(traceDB.uniqueTraces());
         System.out.println("Queried: " + new Date().toString());
