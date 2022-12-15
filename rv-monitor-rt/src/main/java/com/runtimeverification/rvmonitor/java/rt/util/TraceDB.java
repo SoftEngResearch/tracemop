@@ -29,19 +29,20 @@ public class TraceDB {
         this.connection = getConnection();
     }
 
+    int id = 0;
+
     public void put(String monitorID, String trace, int length) {
         try {
-            Clob trace1 = new SerialClob(trace.toCharArray());
-            insert(monitorID, trace1, length);
+            insert(monitorID, new SerialClob(trace.toCharArray()), length);
         } catch (SQLException e) {
             printSQLException(e);
         }
     }
 
     private void insert(String monitorID, Clob trace, int length) {
-        final String INSERT_TRACE_SQL = "INSERT INTO traces (monitorID, trace, length ) VALUES (?, ?, ?);";
+        final String INSERT_TRACE_SQL = "INSERT INTO traces (traceID, trace, length ) VALUES (?, ?, ?);";
         try(PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_TRACE_SQL)) {
-            preparedStatement.setString(1, monitorID);
+            preparedStatement.setInt(1, ++id);
             preparedStatement.setClob(2, trace);
             preparedStatement.setInt(3, length);
             preparedStatement.executeUpdate();
@@ -90,8 +91,8 @@ public class TraceDB {
         return count;
     }
 
-    public void dump(String csvDir) {
-        final String SELECT_QUERY = "select * from traces";
+    public void dump(String csvDir, String tableName) {
+        final String SELECT_QUERY = "select * from " + tableName;
         try(PreparedStatement preparedStatement = getConnection().prepareStatement(SELECT_QUERY)){
             ResultSet rs = preparedStatement.executeQuery();
             new Csv().write(csvDir, rs, null);
@@ -186,7 +187,7 @@ public class TraceDB {
         String s =  new String(cbuf);
 
         Map<String, Integer> traceFrequency = new HashMap<>();
-        final String FREQUENCY_QUERY = "select monitorID, trace from traces  T where  trace = ?;";
+        final String FREQUENCY_QUERY = "select traceID, trace from traces  T where  trace = ?;";
         try(PreparedStatement statement = traceDB.getConnection().prepareStatement(FREQUENCY_QUERY)) {
             statement.setClob(1, trace1);
             ResultSet rs = statement.executeQuery();
@@ -200,5 +201,7 @@ public class TraceDB {
         System.out.println("Freq: " + traceFrequency);
 
         System.out.println("FFF: " + s);
+        traceDB.dump("/tmp/trace-table.csv", "traces");
+        traceDB.dump("/tmp/monitor-table.csv", "monitors");
     }
 }
