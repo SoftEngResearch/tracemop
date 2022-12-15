@@ -1,6 +1,7 @@
 package com.runtimeverification.rvmonitor.java.rt.util;
 
 import javax.sql.rowset.serial.SerialClob;
+import java.io.IOException;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -8,10 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.h2.tools.Csv;
 
@@ -33,7 +31,8 @@ public class TraceDB {
 
     public void put(String monitorID, String trace, int length) {
         try {
-            insert(monitorID, new SerialClob(trace.toCharArray()), length);
+            Clob trace1 = new SerialClob(trace.toCharArray());
+            insert(monitorID, trace1, length);
         } catch (SQLException e) {
             printSQLException(e);
         }
@@ -102,9 +101,11 @@ public class TraceDB {
     }
 
     public void createTable() {
-        final String createTableSQL = "create table traces (monitorID  varchar(150) primary key, trace clob, length int);";
+        final String createTraceTableSQL = "create table traces (traceID  bigint primary key, trace clob, length int);";
+        final String createMonitorTableSQL = "create table monitors (monitorID  varchar(150) primary key, traceID bigint);";
         try (Statement statement = getConnection().createStatement()) {
-            statement.execute(createTableSQL);
+            statement.execute(createTraceTableSQL);
+            statement.execute(createMonitorTableSQL);
         } catch (SQLException e) {
             printSQLException(e);
         }
@@ -166,16 +167,38 @@ public class TraceDB {
         }
     }
 
-//    public static void main(String[] args) {
-//        TraceDB traceDB = new TraceDB();
-//        traceDB.createTable();
-//        System.out.println("Start: " + new Date().toString());
+    public static void main(String[] args) throws SQLException, IOException {
+        TraceDB traceDB = new TraceDB();
+        traceDB.createTable();
+        System.out.println("Start: " + new Date().toString());
 //        for (int i = 0; i < 10000000; i++) {
-//            traceDB.put("fy#"+i, "[a,b,b,c]", 4);
-//            traceDB.put("fy#"+ (i+10000000), "[a,b,b,c]", 6);
+            traceDB.put("fy#"+1, "[a,b,b,c]", 4);
+            traceDB.put("fy#"+ (10000000), "[a,b,b,c,d,e]", 6);
 //        }
-//        System.out.println("Filled: " + new Date().toString());
-//        System.out.println(traceDB.uniqueTraces());
-//        System.out.println("Queried: " + new Date().toString());
-//    }
+        System.out.println("Filled: " + new Date().toString());
+        System.out.println(traceDB.uniqueTraces());
+        System.out.println("Queried: " + new Date().toString());
+
+        Clob trace1 = new SerialClob("[a,b,b,c]".toCharArray());
+
+        char[] cbuf = new char[(int) trace1.length()];
+        trace1.getCharacterStream().read(cbuf);
+        String s =  new String(cbuf);
+
+        Map<String, Integer> traceFrequency = new HashMap<>();
+        final String FREQUENCY_QUERY = "select monitorID, trace from traces  T where  trace = ?;";
+        try(PreparedStatement statement = traceDB.getConnection().prepareStatement(FREQUENCY_QUERY)) {
+            statement.setClob(1, trace1);
+            ResultSet rs = statement.executeQuery();
+//            ResultSet rs = statement.executeQuery(FREQUENCY_QUERY);
+            while (rs.next()) {
+                System.out.println("GGGG: " + rs.getString(1) +  ":::" + rs.getClob(2));
+            }
+        } catch (SQLException e) {
+            traceDB.printSQLException(e);
+        }
+        System.out.println("Freq: " + traceFrequency);
+
+        System.out.println("FFF: " + s);
+    }
 }
