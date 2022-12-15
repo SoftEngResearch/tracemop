@@ -16,9 +16,11 @@ import org.h2.tools.Csv;
 public class TraceDB {
 
     private Connection connection;
-    private String jdbcURL = "jdbc:h2:/tmp/tracedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE";
+    private String jdbcURL = "jdbc:h2:/tmp/tracedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;DEFRAG_ALWAYS=TRUE;LOB_TIMEOUT=30000000";
     private String jdbcUsername = "tdb";
     private String jdbcPassword = "";
+
+    private Map<Clob, Long> traceIDMap = new HashMap<>();
 
     public TraceDB() {
         this.connection = getConnection();
@@ -42,21 +44,30 @@ public class TraceDB {
     private void insert(String monitorID, Clob trace, int length) {
         // first check if trace is already in the trace table and get its traceID
         long traceID = getTraceID(trace);
-        System.out.println("AAAA: " + traceID);
-        // if trace is not in the trace table, add it and then obtain its traceID
-        if (traceID == -1) {
-            traceID = size() + 1;
-            final String INSERT_TRACE_SQL = "INSERT INTO traces (traceID, trace, length ) VALUES (?, ?, ?);";
-            try(PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_TRACE_SQL)) {
-                preparedStatement.setLong(1, traceID);
-                preparedStatement.setClob(2, trace);
-                preparedStatement.setInt(3, length);
-                preparedStatement.executeUpdate();
-            } catch (SQLException e) {
-                printSQLException(e);
-            }
+        // if trace is in the trace table, add monitorID and traceID to the monitor table
+        if (traceID != -1) {
+            addMonitor(monitorID, traceID);
+        } else {
+            // otherwise, add trace and then obtain its traceID
+            addTrace(trace, length);
+            // we just added the trace, so its traceID must be the largest one in the traces table
+            addMonitor(monitorID, size());
         }
-        // finally add monitorID and traceID to the monitor table
+
+    }
+
+    private void addTrace(Clob trace, int length) {
+        final String INSERT_TRACE_SQL = "INSERT INTO traces (trace, length ) VALUES (?, ?);";
+        try (PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_TRACE_SQL)) {
+            preparedStatement.setClob(1, trace);
+            preparedStatement.setInt(2, length);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            printSQLException(e);
+        }
+    }
+
+    private void addMonitor(String monitorID, long traceID) {
         final String INSERT_MONITOR_SQL = "INSERT INTO monitors (monitorID, traceID) VALUES (?, ?);";
         try(PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_MONITOR_SQL)) {
             preparedStatement.setString(1, monitorID);
@@ -68,6 +79,10 @@ public class TraceDB {
     }
 
     private long getTraceID(Clob trace) {
+        Long id = traceIDMap.get(trace);
+        if (id != null) {
+            return id;
+        }
         long traceID = -1;
         final String TRACEID_QUERY = "select traceID from traces  where trace = ?;";
         try(PreparedStatement statement = getConnection().prepareStatement(TRACEID_QUERY)) {
@@ -138,7 +153,7 @@ public class TraceDB {
     }
 
     public void createTable() {
-        final String createTraceTableSQL = "create table traces (traceID  bigint primary key, trace clob, length int);";
+        final String createTraceTableSQL = "create table traces (traceID  bigint auto_increment primary key, trace clob, length int);";
         final String createMonitorTableSQL = "create table monitors (monitorID  varchar(150) primary key, traceID bigint);";
         try (Statement statement = getConnection().createStatement()) {
             statement.execute(createTraceTableSQL);
@@ -211,34 +226,33 @@ public class TraceDB {
         traceDB.put("fy#"+1, "[a,b,b,c]", 4);
         traceDB.put("fy#"+2, "[a,b,b,c,d,e]", 6);
         traceDB.put("fy#"+3, "[a,b,b,c]", 4);
-        for (int i = 4; i < 1000000; i++) {
+        for (int i = 4; i < 10000000; i++) {
             traceDB.put("fy#"+i, "[a,b,b,c,d,e]", 6);
         }
         System.out.println("Filled: " + new Date().toString());
-        System.out.println(traceDB.uniqueTraces());
+//        System.out.println(traceDB.uniqueTraces());
         System.out.println("Queried: " + new Date().toString());
 
-        Clob trace1 = new SerialClob("[a,b,b,c]".toCharArray());
+//        Clob trace1 = new SerialClob("[a,b,b,c]".toCharArray());
 
-        char[] cbuf = new char[(int) trace1.length()];
-        trace1.getCharacterStream().read(cbuf);
-        String s =  new String(cbuf);
-
-        Map<String, Integer> traceFrequency = new HashMap<>();
-        final String FREQUENCY_QUERY = "select traceID, trace from traces  T where  trace = ?;";
-        try(PreparedStatement statement = traceDB.getConnection().prepareStatement(FREQUENCY_QUERY)) {
-            statement.setClob(1, trace1);
-            ResultSet rs = statement.executeQuery();
-//            ResultSet rs = statement.executeQuery(FREQUENCY_QUERY);
-            while (rs.next()) {
-                System.out.println("GGGG: " + rs.getString(1) +  ":::" + rs.getClob(2));
-            }
-        } catch (SQLException e) {
-            traceDB.printSQLException(e);
-        }
-        System.out.println("Freq: " + traceFrequency);
-
-        System.out.println("FFF: " + s);
+//        char[] cbuf = new char[(int) trace1.length()];
+//        trace1.getCharacterStream().read(cbuf);
+//        String s =  new String(cbuf);
+//
+//        Map<String, Integer> traceFrequency = new HashMap<>();
+//        final String FREQUENCY_QUERY = "select traceID, trace from traces  T where  trace = ?;";
+//        try(PreparedStatement statement = traceDB.getConnection().prepareStatement(FREQUENCY_QUERY)) {
+//            statement.setClob(1, trace1);
+//            ResultSet rs = statement.executeQuery();
+//            while (rs.next()) {
+//                System.out.println("GGGG: " + rs.getString(1) +  ":::" + rs.getClob(2));
+//            }
+//        } catch (SQLException e) {
+//            traceDB.printSQLException(e);
+//        }
+//        System.out.println("Freq: " + traceFrequency);
+//
+//        System.out.println("FFF: " + s);
         traceDB.dump("/tmp/trace-table.csv", "traces");
         traceDB.dump("/tmp/monitor-table.csv", "monitors");
     }
