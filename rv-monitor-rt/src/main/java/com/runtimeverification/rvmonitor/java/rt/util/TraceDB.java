@@ -40,15 +40,51 @@ public class TraceDB {
     }
 
     private void insert(String monitorID, Clob trace, int length) {
-        final String INSERT_TRACE_SQL = "INSERT INTO traces (traceID, trace, length ) VALUES (?, ?, ?);";
-        try(PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_TRACE_SQL)) {
-            preparedStatement.setInt(1, ++id);
-            preparedStatement.setClob(2, trace);
-            preparedStatement.setInt(3, length);
+        // first check if trace is already in the trace table and get its traceID
+        long traceID = getTraceID(trace);
+        System.out.println("AAAA: " + traceID);
+        // if trace is not in the trace table, add it and then obtain its traceID
+        if (traceID == -1) {
+            traceID = size() + 1;
+            final String INSERT_TRACE_SQL = "INSERT INTO traces (traceID, trace, length ) VALUES (?, ?, ?);";
+            try(PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_TRACE_SQL)) {
+                preparedStatement.setLong(1, traceID);
+                preparedStatement.setClob(2, trace);
+                preparedStatement.setInt(3, length);
+                preparedStatement.executeUpdate();
+            } catch (SQLException e) {
+                printSQLException(e);
+            }
+        }
+        // finally add monitorID and traceID to the monitor table
+        final String INSERT_MONITOR_SQL = "INSERT INTO monitors (monitorID, traceID) VALUES (?, ?);";
+        try(PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_MONITOR_SQL)) {
+            preparedStatement.setString(1, monitorID);
+            preparedStatement.setLong(2, traceID);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             printSQLException(e);
         }
+    }
+
+    private long getTraceID(Clob trace) {
+        long traceID = -1;
+        final String TRACEID_QUERY = "select traceID from traces  where trace = ?;";
+        try(PreparedStatement statement = getConnection().prepareStatement(TRACEID_QUERY)) {
+            statement.setClob(1, trace);
+            ResultSet rs = statement.executeQuery();
+            long size = 0;
+            if (rs != null) {
+                rs.last();
+                size = rs.getRow();
+                if (size > 0) {
+                    traceID = size;
+                }
+            }
+        } catch (SQLException e) {
+            printSQLException(e);
+        }
+        return traceID;
     }
 
     public void update(String monitorID, String trace, int length) {
