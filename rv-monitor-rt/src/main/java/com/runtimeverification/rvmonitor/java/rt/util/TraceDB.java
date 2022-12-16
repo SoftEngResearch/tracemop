@@ -16,7 +16,7 @@ import org.h2.tools.Csv;
 public class TraceDB {
 
     private Connection connection;
-    private String jdbcURL = "jdbc:h2:/tmp/tracedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;DEFRAG_ALWAYS=TRUE;LOB_TIMEOUT=30000000";
+    private String jdbcURL = "jdbc:h2:/tmp/tracedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=TRUE;DEFRAG_ALWAYS=TRUE;LOB_TIMEOUT=30000000;CACHE_SIZE=2048000";
     private String jdbcUsername = "tdb";
     private String jdbcPassword = "";
 
@@ -154,7 +154,7 @@ public class TraceDB {
 
     public void createTable() {
         final String createTraceTableSQL = "create table traces (traceID  bigint auto_increment primary key, trace clob, length int);";
-        final String createMonitorTableSQL = "create table monitors (monitorID  varchar(150) primary key, traceID bigint);";
+        final String createMonitorTableSQL = "create table monitors (monitorID  varchar(150) primary key, traceID bigint, foreign key (traceID) references traces(traceID));";
         try (Statement statement = getConnection().createStatement()) {
             statement.execute(createTraceTableSQL);
             statement.execute(createMonitorTableSQL);
@@ -220,13 +220,16 @@ public class TraceDB {
     }
 
     public static void main(String[] args) throws SQLException, IOException {
+        System.setProperty("h2.objectCacheMaxPerElementSize", "12288");
+        System.setProperty("h2.objectCacheSize", "2048");
         TraceDB traceDB = new TraceDB();
         traceDB.createTable();
         System.out.println("Start: " + new Date().toString());
         traceDB.put("fy#"+1, "[a,b,b,c]", 4);
         traceDB.put("fy#"+2, "[a,b,b,c,d,e]", 6);
         traceDB.put("fy#"+3, "[a,b,b,c]", 4);
-        for (int i = 4; i < 10000000; i++) {
+        for (int i = 4; i < 100000000; i++) {
+            System.out.println(i);
             traceDB.put("fy#"+i, "[a,b,b,c,d,e]", 6);
         }
         System.out.println("Filled: " + new Date().toString());
