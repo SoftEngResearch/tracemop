@@ -106,7 +106,7 @@ public class TraceDB {
         return traceID;
     }
 
-    public void gtupdate(String monitorID, String trace, int length) {
+    public void update(String monitorID, String trace, int length) {
         try {
             SerialClob traceClob = new SerialClob(trace.toCharArray());
             long traceID = getTraceID(traceClob);
