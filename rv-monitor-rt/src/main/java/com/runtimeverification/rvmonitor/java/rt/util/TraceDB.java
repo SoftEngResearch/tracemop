@@ -36,8 +36,6 @@ public class TraceDB {
         this.connection = getConnection();
     }
 
-    int id = 0;
-
     public void put(String monitorID, String trace, int length) {
         try {
             insert(monitorID, new SerialClob(trace.toCharArray()), length);
@@ -126,7 +124,7 @@ public class TraceDB {
         } catch (SerialException e) {
             throw new RuntimeException(e);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            printSQLException(e);
         }
 
     }
@@ -270,7 +268,7 @@ public class TraceDB {
         System.setProperty("h2.objectCacheSize", "2048");
         TraceDB traceDB = new TraceDB();
         traceDB.createTable();
-        System.out.println("Start: " + new Date().toString());
+        System.out.println("Start: " + new Date());
         traceDB.put("fy#"+1, "[a,b,b,c]", 4);
         traceDB.put("fy#"+2, "[a,b,b,c,d,e]", 6);
         traceDB.put("fy#"+3, "[a,b,b,c,d,e]", 6);
@@ -284,11 +282,11 @@ public class TraceDB {
 //            System.out.println(i);
 //            traceDB.put("fy#"+i, "[a,b,b,c,d,e]", 6);
 //        }
-        System.out.println("Filled: " + new Date().toString());
+        System.out.println("Filled: " + new Date());
         System.out.println(traceDB.getTraceFrequencies());
         System.out.println(traceDB.getTraceLengths());
         System.out.println(traceDB.uniqueTraces());
-        System.out.println("Queried: " + new Date().toString());
+        System.out.println("Queried: " + new Date());
 
 //        Clob trace1 = new SerialClob("[a,b,b,c]".toCharArray());
 
