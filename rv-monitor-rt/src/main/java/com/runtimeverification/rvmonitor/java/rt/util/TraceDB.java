@@ -93,14 +93,6 @@ public class TraceDB {
             if (rs.next()) {
                 traceID = rs.getInt(1);
             }
-//            long size = 0;
-//            if (rs != null) {
-//                rs.last();
-//                size = rs.getRow();
-//                if (size > 0) {
-//                    traceID = size;
-//                }
-//            }
         } catch (SQLException e) {
             printSQLException(e);
         }
