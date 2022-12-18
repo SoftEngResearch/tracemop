@@ -21,7 +21,11 @@ public class TraceDB {
     private String jdbcUsername = "tdb";
     private String jdbcPassword = "";
 
+    // cache of traces and their IDs that we know of, to save trips to the DB
     private Map<Clob, Long> traceIDMap = new HashMap<>();
+
+    // has the DB been cleaned since we last updated its contents?
+    private boolean isCleaned = true;
 
     public TraceDB() {
         this.connection = getConnection();
@@ -40,6 +44,7 @@ public class TraceDB {
         } catch (SQLException e) {
             printSQLException(e);
         }
+        isCleaned = false;
     }
 
     private void insert(String monitorID, Clob trace, int length) {
@@ -51,11 +56,13 @@ public class TraceDB {
         } else {
             // otherwise, add trace and then obtain its traceID
             addTrace(trace, length);
+            // TODO: can we get the traceID at the same time as the add (to save one query)?
             traceID = getTraceID(trace);
             // add monitor and its traceID to the monitor table
             addMonitor(monitorID, traceID);
         }
-
+        // we may now have dangling traces?
+        isCleaned = false;
     }
 
     private void addTrace(Clob trace, int length) {
@@ -99,7 +106,7 @@ public class TraceDB {
         return traceID;
     }
 
-    public void update(String monitorID, String trace, int length) {
+    public void gtupdate(String monitorID, String trace, int length) {
         try {
             SerialClob traceClob = new SerialClob(trace.toCharArray());
             long traceID = getTraceID(traceClob);
@@ -108,11 +115,14 @@ public class TraceDB {
                 updateTraceID(monitorID, traceID);
             } else {
                 // if the trace was not seen before, add it and update the traceID in th monitor table
+                // TODO: can we get the traceID at the same time as the add (to save one query)?
                 addTrace(traceClob, length);
                 traceID = getTraceID(traceClob);
                 // update the monitor to its new traceID
                 updateTraceID(monitorID, traceID);
             }
+            // we may now have dangling traces?
+            isCleaned = false;
         } catch (SerialException e) {
             throw new RuntimeException(e);
         } catch (SQLException e) {
@@ -133,6 +143,7 @@ public class TraceDB {
     }
 
     public int size() {
+        cleanDB();
         int count = -1;
         final String COUNT_QUERY = "select count(*) from traces";
         try(Statement statement =  getConnection().createStatement()){
@@ -147,8 +158,9 @@ public class TraceDB {
     }
 
     public int uniqueTraces() {
+        cleanDB();
         int count = -1;
-        final String TRACE_QUERY = "select count(distinct(trace)) from traces";
+        final String TRACE_QUERY = "select count(distinct(traceID)) from monitors";
         try (Statement statement = getConnection().createStatement()) {
             ResultSet rs = statement.executeQuery(TRACE_QUERY);
             if (rs.next()) {
@@ -161,10 +173,24 @@ public class TraceDB {
     }
 
     public void dump(String csvDir, String tableName) {
+        cleanDB();
         final String SELECT_QUERY = "select * from " + tableName;
         try(PreparedStatement preparedStatement = getConnection().prepareStatement(SELECT_QUERY)){
             ResultSet rs = preparedStatement.executeQuery();
             new Csv().write(csvDir, rs, null);
+        } catch (SQLException e) {
+            printSQLException(e);
+        }
+    }
+
+    private void cleanDB() {
+        if (isCleaned) {
+            return;
+        }
+        final String DELETE_QUERY = "delete from traces where traceID not in (select distinct(traceID) from monitors);";
+        try (Statement statement = getConnection().createStatement()) {
+            statement.executeUpdate(DELETE_QUERY);
+            isCleaned = true;
         } catch (SQLException e) {
             printSQLException(e);
         }
@@ -194,8 +220,9 @@ public class TraceDB {
     }
 
     public List<Integer> getTraceLengths() {
+        cleanDB();
         List<Integer> lengths =  new ArrayList<>();
-        final String LENGTHS_QUERY = "select length from traces";
+        final String LENGTHS_QUERY = "select length from traces inner join monitors on traces.traceID = monitors.traceID";
         try (Statement statement = getConnection().createStatement()) {
             ResultSet rs =  statement.executeQuery(LENGTHS_QUERY);
             while (rs.next()) {
@@ -208,6 +235,7 @@ public class TraceDB {
     }
 
     public Map<String, Integer> getTraceFrequencies() {
+        cleanDB();
         Map<String, Integer> traceFrequency = new HashMap<>();
         final String FREQUENCY_QUERY = "select count(*), trace from monitors inner join traces on monitors.traceID = traces.traceID group by monitors.traceID ";
         try(Statement statement = getConnection().createStatement()) {
@@ -248,7 +276,10 @@ public class TraceDB {
         traceDB.put("fy#"+3, "[a,b,b,c,d,e]", 6);
         traceDB.put("fy#"+4, "[a,b,b,c,d,e]", 6);
         traceDB.put("fy#"+5, "[a,b,b,c]", 4);
+        traceDB.update("fy#"+5, "[a,b,b,c,c]", 5);
         traceDB.update("fy#"+4, "[a,b,b,c,d,e,f]", 7);
+        traceDB.update("fy#"+1, "[a,b,b,c,c]", 5);
+        traceDB.update("fy#"+4, "[a,b,b,c,d,e,f,e]", 8);
 //        for (int i = 4; i < 1000000; i++) {
 //            System.out.println(i);
 //            traceDB.put("fy#"+i, "[a,b,b,c,d,e]", 6);
@@ -281,5 +312,11 @@ public class TraceDB {
 //        System.out.println("FFF: " + s);
         traceDB.dump("/tmp/trace-table.csv", "traces");
         traceDB.dump("/tmp/monitor-table.csv", "monitors");
+
+//        traceDB.put("fy#"+6, "[a,b,b,c]", 4);
+//
+//        traceDB.dump("/tmp/trace-table-2.csv", "traces");
+//        traceDB.dump("/tmp/monitor-table.-2csv", "monitors");
+
     }
 }
