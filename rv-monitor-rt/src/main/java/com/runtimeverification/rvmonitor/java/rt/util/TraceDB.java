@@ -1,6 +1,7 @@
 package com.runtimeverification.rvmonitor.java.rt.util;
 
 import javax.sql.rowset.serial.SerialClob;
+import javax.sql.rowset.serial.SerialException;
 import java.io.IOException;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -50,8 +51,9 @@ public class TraceDB {
         } else {
             // otherwise, add trace and then obtain its traceID
             addTrace(trace, length);
-            // we just added the trace, so its traceID must be the largest one in the traces table
-            addMonitor(monitorID, size());
+            traceID = getTraceID(trace);
+            // add monitor and its traceID to the monitor table
+            addMonitor(monitorID, traceID);
         }
 
     }
@@ -88,14 +90,17 @@ public class TraceDB {
         try(PreparedStatement statement = getConnection().prepareStatement(TRACEID_QUERY)) {
             statement.setClob(1, trace);
             ResultSet rs = statement.executeQuery();
-            long size = 0;
-            if (rs != null) {
-                rs.last();
-                size = rs.getRow();
-                if (size > 0) {
-                    traceID = size;
-                }
+            if (rs.next()) {
+                traceID = rs.getInt(1);
             }
+//            long size = 0;
+//            if (rs != null) {
+//                rs.last();
+//                size = rs.getRow();
+//                if (size > 0) {
+//                    traceID = size;
+//                }
+//            }
         } catch (SQLException e) {
             printSQLException(e);
         }
@@ -103,11 +108,32 @@ public class TraceDB {
     }
 
     public void update(String monitorID, String trace, int length) {
-        final String UPDATE_TRACE_SQL = "update traces set trace = ?, length = ? where monitorID = ?;";
+        try {
+            SerialClob traceClob = new SerialClob(trace.toCharArray());
+            long traceID = getTraceID(traceClob);
+            if (traceID != -1) {
+                // the trace was seen before, simply update traceID in the monitor table
+                updateTraceID(monitorID, traceID);
+            } else {
+                // if the trace was not seen before, add it and update the traceID in th monitor table
+                addTrace(traceClob, length);
+                traceID = getTraceID(traceClob);
+                // update the monitor to its new traceID
+                updateTraceID(monitorID, traceID);
+            }
+        } catch (SerialException e) {
+            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private void updateTraceID(String monitorID, long traceID) {
+        final String UPDATE_TRACE_SQL = "update monitors set traceID = ? where monitorID = ?;";
         try(PreparedStatement preparedStatement = getConnection().prepareStatement(UPDATE_TRACE_SQL)){
-            preparedStatement.setClob(1, new SerialClob(trace.toCharArray()));
-            preparedStatement.setInt(2, length);
-            preparedStatement.setString(3, monitorID);
+            preparedStatement.setLong(1, traceID);
+            preparedStatement.setString(2, monitorID);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -191,11 +217,11 @@ public class TraceDB {
 
     public Map<String, Integer> getTraceFrequencies() {
         Map<String, Integer> traceFrequency = new HashMap<>();
-        final String FREQUENCY_QUERY = "select trace, count(*) from traces group by trace";
+        final String FREQUENCY_QUERY = "select count(*), trace from monitors inner join traces on monitors.traceID = traces.traceID group by monitors.traceID ";
         try(Statement statement = getConnection().createStatement()) {
             ResultSet rs = statement.executeQuery(FREQUENCY_QUERY);
             while (rs.next()) {
-                traceFrequency.put(rs.getString(1), rs.getInt(2));
+                traceFrequency.put(rs.getString(2), rs.getInt(1));
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -227,13 +253,18 @@ public class TraceDB {
         System.out.println("Start: " + new Date().toString());
         traceDB.put("fy#"+1, "[a,b,b,c]", 4);
         traceDB.put("fy#"+2, "[a,b,b,c,d,e]", 6);
-        traceDB.put("fy#"+3, "[a,b,b,c]", 4);
-        for (int i = 4; i < 100000000; i++) {
-            System.out.println(i);
-            traceDB.put("fy#"+i, "[a,b,b,c,d,e]", 6);
-        }
+        traceDB.put("fy#"+3, "[a,b,b,c,d,e]", 6);
+        traceDB.put("fy#"+4, "[a,b,b,c,d,e]", 6);
+        traceDB.put("fy#"+5, "[a,b,b,c]", 4);
+        traceDB.update("fy#"+4, "[a,b,b,c,d,e,f]", 7);
+//        for (int i = 4; i < 1000000; i++) {
+//            System.out.println(i);
+//            traceDB.put("fy#"+i, "[a,b,b,c,d,e]", 6);
+//        }
         System.out.println("Filled: " + new Date().toString());
-//        System.out.println(traceDB.uniqueTraces());
+        System.out.println(traceDB.getTraceFrequencies());
+        System.out.println(traceDB.getTraceLengths());
+        System.out.println(traceDB.uniqueTraces());
         System.out.println("Queried: " + new Date().toString());
 
 //        Clob trace1 = new SerialClob("[a,b,b,c]".toCharArray());
