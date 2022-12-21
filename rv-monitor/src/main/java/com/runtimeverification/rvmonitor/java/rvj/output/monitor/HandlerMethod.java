@@ -46,6 +46,17 @@ public class HandlerMethod {
             handlerBody = handlerBody.replaceAll("__SKIP",
                     BaseMonitor.skipEvent + " = true");
 
+            if (Main.options.showMonitors) {
+                handlerBody += "RVMLogging.out.println(Level.WARNING, __MONITOR_MESSAGE);\n";
+                handlerBody = handlerBody.replaceAll("__MONITOR_MESSAGE",
+                        "\"Monitor: \" + this.monitorid");
+            }
+            if (Main.options.showTraces) {
+                handlerBody += "RVMLogging.out.println(Level.WARNING, __TRACE_MESSAGE);\n";
+                handlerBody = handlerBody.replaceAll("__TRACE_MESSAGE",
+                        "\"Monitor trace: \" + this.trace");
+            }
+
             this.handlerCode = new RVMJavaCode(handlerBody);
         } else {
             this.handlerCode = null;
