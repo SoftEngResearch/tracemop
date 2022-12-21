@@ -109,6 +109,12 @@ public class RVMOptions {
             converter = JavaMOPOptions.FileConverter.class)
     public File artifactsDir = new File(System.getProperty("java.io.tmpdir"));
 
+    @Parameter(names={"-showMonitors"}, description = "Display monitors during runs.")
+    public boolean showMonitors = false;
+
+    @Parameter(names={"-showTraces"}, description = "Display traces during runs.")
+    public boolean showTraces = false;
+
     public boolean isJarFile;
 
     public String jarFilePath;

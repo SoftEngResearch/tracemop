@@ -354,6 +354,16 @@ public class BaseMonitor extends Monitor {
                         "this." + activity);
                 eventActionStr = eventActionStr.replaceAll("__SKIP", "this."
                                                                      + skipEvent + " = true");
+                if (Main.options.showMonitors) {
+                    eventActionStr += "RVMLogging.out.println(Level.WARNING, __MONITOR_MESSAGE);\n";
+                    eventActionStr = eventActionStr.replaceAll("__MONITOR_MESSAGE",
+                            "\"Monitor: \" + this.monitorid");
+                }
+                if (Main.options.showTraces) {
+                    eventActionStr += "RVMLogging.out.println(Level.WARNING, __TRACE_MESSAGE);\n";
+                    eventActionStr = eventActionStr.replaceAll("__TRACE_MESSAGE",
+                            "\"Monitor trace: \" + this.trace");
+                }
 
                 eventAction = new RVMJavaCode(eventActionStr);
             }
