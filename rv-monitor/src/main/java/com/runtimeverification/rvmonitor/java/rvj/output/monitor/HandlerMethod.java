@@ -1,5 +1,6 @@
 package com.runtimeverification.rvmonitor.java.rvj.output.monitor;
 
+import java.io.File;
 import java.util.HashMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
@@ -55,6 +56,15 @@ public class HandlerMethod {
                 handlerBody += "RVMLogging.out.println(Level.WARNING, __TRACE_MESSAGE);\n";
                 handlerBody = handlerBody.replaceAll("__TRACE_MESSAGE",
                         "\"Monitor trace: \" + this.trace");
+            }
+            if (Main.options.showMonitors || Main.options.showTraces) {
+                handlerBody += "try {File file = new File(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\");"
+                        + "file.getParentFile().mkdirs();"
+                        + "file.createNewFile();"
+                        + "try (FileWriter writer = new FileWriter(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\", true)) {"
+                        + "writer.write(this.trace + \"\\n\");"
+                        + "} catch (IOException ex) { ex.printStackTrace(); }"
+                        + "} catch (IOException ex) { ex.printStackTrace(); }";
             }
 
             this.handlerCode = new RVMJavaCode(handlerBody);
