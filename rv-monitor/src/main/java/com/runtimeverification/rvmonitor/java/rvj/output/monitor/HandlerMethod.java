@@ -48,23 +48,24 @@ public class HandlerMethod {
                     BaseMonitor.skipEvent + " = true");
 
             if (Main.options.showMonitors) {
-                handlerBody += "RVMLogging.out.println(Level.WARNING, __MONITOR_MESSAGE);\n";
-                handlerBody = handlerBody.replaceAll("__MONITOR_MESSAGE",
-                        "\"Monitor: \" + this.monitorid");
+                handlerBody += "RVMLogging.out.println(Level.WARNING, \"Monitor: \" + this.monitorid);\n";
             }
             if (Main.options.showTraces) {
-                handlerBody += "RVMLogging.out.println(Level.WARNING, __TRACE_MESSAGE);\n";
-                handlerBody = handlerBody.replaceAll("__TRACE_MESSAGE",
-                        "\"Monitor trace: \" + this.trace");
+                handlerBody += "RVMLogging.out.println(Level.WARNING, \"Monitor trace: \" + this.trace);\n";
             }
             if (Main.options.showMonitors || Main.options.showTraces) {
-                handlerBody += "try {File file = new File(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\");"
-                        + "file.getParentFile().mkdirs();"
-                        + "file.createNewFile();"
-                        + "try (FileWriter writer = new FileWriter(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\", true)) {"
-                        + "writer.write(this.trace + \"\\n\");"
-                        + "} catch (IOException ex) { ex.printStackTrace(); }"
-                        + "} catch (IOException ex) { ex.printStackTrace(); }";
+                handlerBody += "try {\n"
+                        + "File file = new File(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\");\n"
+                        + "file.getParentFile().mkdirs();\n"
+                        + "file.createNewFile();\n"
+                        + "try (FileWriter writer = new FileWriter(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\", true)) {\n"
+                        + "writer.write(this.trace + \"\\n\");\n"
+                        + "} catch (IOException ex) {\n"
+                        + "ex.printStackTrace();\n"
+                        + "}\n"
+                        + "} catch (IOException ex) {\n"
+                        + "ex.printStackTrace();\n"
+                        + "}";
             }
 
             this.handlerCode = new RVMJavaCode(handlerBody);
