@@ -55,10 +55,10 @@ public class HandlerMethod {
             }
             if (Main.options.showMonitors || Main.options.showTraces) {
                 handlerBody += "try {\n"
-                        + "File file = new File(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\");\n"
+                        + "File file = new File(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName().split(\"\\\\.\")[1] + \"#\" + this.monitorid + \".txt\");\n"
                         + "file.getParentFile().mkdirs();\n"
                         + "file.createNewFile();\n"
-                        + "try (FileWriter writer = new FileWriter(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName() + \"#\" + this.monitorid + \".txt\", true)) {\n"
+                        + "try (FileWriter writer = new FileWriter(\"" + Main.options.artifactsDir + File.separator + ".traces" + File.separator + "violations" + File.separator + "\" + this.getClass().getName().split(\"\\\\.\")[1] + \"#\" + this.monitorid + \".txt\", true)) {\n"
                         + "writer.write(this.trace + \"\\n\");\n"
                         + "} catch (IOException ex) {\n"
                         + "ex.printStackTrace();\n"
