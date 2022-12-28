@@ -2,7 +2,7 @@ package com.runtimeverification.rvmonitor.java.rt;
 
 public abstract class RVMLogging {
   public static enum Level {
-    ALL, WARNING, CRITICAL, NONE, UNIQUE
+    ALL, WARNING, CRITICAL, NONE, UNIQUE, UNIQUE_WITH_RV_TRACE, UNIQUE_WITH_CODE_TRACE
   }
 
   public static RVMLogging out;
@@ -34,6 +34,10 @@ public abstract class RVMLogging {
     else if(loggingLevel.equals("UNIQUE")){
       out = new RVMLoggingUnique(System.out);
       err = new RVMLoggingUnique(System.err);
+    }
+    else if(loggingLevel.equals("UNIQUE_WITH_RV_TRACE")){
+      out = new RVMLoggingUniqueTrace(System.out, loggingLevel);
+      err = new RVMLoggingUniqueTrace(System.err, loggingLevel);
     }
   }
 
