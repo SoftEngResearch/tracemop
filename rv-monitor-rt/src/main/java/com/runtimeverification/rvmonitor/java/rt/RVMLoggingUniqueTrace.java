@@ -3,10 +3,12 @@ package com.runtimeverification.rvmonitor.java.rt;
 import com.runtimeverification.rvmonitor.java.rt.util.TraceUtil;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
@@ -25,7 +27,8 @@ public class RVMLoggingUniqueTrace extends RVMLoggingUnique {
             public void run() {
                 // Copy .traces
                 try {
-                    Files.copy(Paths.get(TraceUtil.artifactsDir + File.separator + ".traces"), Paths.get(System.getProperty("user.dir")), StandardCopyOption.REPLACE_EXISTING);
+                    // TODO: Hard-coded now, must change later
+                    copyDirectory(File.separator + "tmp" + File.separator + ".traces", System.getProperty("user.dir") + File.separator + ".traces");
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -80,5 +83,18 @@ public class RVMLoggingUniqueTrace extends RVMLoggingUnique {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    // Referenced from https://www.baeldung.com/java-copy-directory section 2
+    private void copyDirectory(String sourceDirectoryLocation, String destinationDirectoryLocation) throws IOException {
+        Files.walk(Paths.get(sourceDirectoryLocation)).forEach(source -> {
+            Path destination = Paths.get(destinationDirectoryLocation, source.toString()
+                    .substring(sourceDirectoryLocation.length()));
+            try {
+                Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }
