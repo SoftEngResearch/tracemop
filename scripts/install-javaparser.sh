@@ -1,5 +1,6 @@
 (
-    cd /tmp
+    mkdir javaparser-tmp
+    cd javaparser-tmp
     git clone https://github.com/javaparser/javaparser.git
     (
         cd javaparser
@@ -8,3 +9,4 @@
         mvn install -DskipTests -DskipITs
     )
 )
+rm -rf javaparser-tmp
