@@ -84,7 +84,7 @@ public class TraceDBDuck implements TraceDB {
      */
     private void updateSystemProperty() {
         System.setProperty("dbFilePath", this.dbDir);
-        System.err.println("Set dbFilePath to: " + System.getProperty("dbFilePath"));
+        System.err.println("[TraceDBDuck] Set dbFilePath to: " + System.getProperty("dbFilePath"));
     }
 
     @Override
