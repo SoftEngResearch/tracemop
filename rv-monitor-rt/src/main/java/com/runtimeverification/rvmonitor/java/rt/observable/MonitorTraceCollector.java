@@ -18,6 +18,7 @@ import com.runtimeverification.rvmonitor.java.rt.tablebase.IDisableHolder;
 import com.runtimeverification.rvmonitor.java.rt.tablebase.IIndexingTreeValue;
 import com.runtimeverification.rvmonitor.java.rt.tablebase.IMonitor;
 import com.runtimeverification.rvmonitor.java.rt.util.TraceDB;
+import com.runtimeverification.rvmonitor.java.rt.util.TraceDBDuck;
 import com.runtimeverification.rvmonitor.java.rt.util.TraceDBH2;
 import com.runtimeverification.rvmonitor.java.rt.util.TraceDBH2Normalized;
 
@@ -98,6 +99,9 @@ public class MonitorTraceCollector implements IInternalBehaviorObserver {
                     case "h2-normalized":
                         traceDB = new TraceDBH2Normalized(dbPath);
                         break;
+                    case "duck":
+                        traceDB = new TraceDBDuck(dbPath);
+                        break;
                     default:
                         traceDB = new TraceDBH2(dbPath);
                 }
@@ -106,7 +110,7 @@ public class MonitorTraceCollector implements IInternalBehaviorObserver {
 
         // some problem occurred while reading from config; use the default
         if (traceDB == null) {
-            traceDB = new TraceDBH2Normalized(dbPath);
+            traceDB = new TraceDBH2(dbPath);
         }
 
         return traceDB;
