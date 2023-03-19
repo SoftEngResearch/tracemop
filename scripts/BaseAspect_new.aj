@@ -11,6 +11,7 @@ public aspect BaseAspect {
   !within(net.sf.cglib..*) &&
   !within(mop..*) &&
   !within(org.h2..*) &&
+  !within(org.duckdb..*) &&
   !within(javamoprt..*) &&
   !within(rvmonitorrt..*) &&
   !within(org.junit..*) &&
