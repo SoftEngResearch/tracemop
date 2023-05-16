@@ -63,6 +63,19 @@
       <version>3.41.0.0</version>
     </dependency>
     <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>8.0.19</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
+    <!-- <dependency> -->
+    <!--     <groupId>com.mysql</groupId> -->
+    <!--     <artifactId>mysql-connector-j</artifactId> -->
+    <!--     <version>8.0.33</version> -->
+    <!-- </dependency> -->
+
+    <dependency>
       <groupId>com.beust</groupId>
       <artifactId>jcommander</artifactId>
       <version>1.35</version>
