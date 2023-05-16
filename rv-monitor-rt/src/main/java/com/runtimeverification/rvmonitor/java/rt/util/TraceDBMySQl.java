@@ -64,7 +64,7 @@ public class TraceDBMySQl implements TraceDB{
 
     @Override
     public void put(String monitorID, String trace, int length) {
-        final String INSERT_TRACE_SQL = "INSERT INTO traces (monitorID, trace, length ) VALUES (?, ?, ?);";
+        final String INSERT_TRACE_SQL = "INSERT INTO " + tableName + "(monitorID, trace, length ) VALUES (?, ?, ?);";
         try (PreparedStatement preparedStatement = getConnection().prepareStatement(INSERT_TRACE_SQL)) {
             preparedStatement.setString(1, monitorID);
             preparedStatement.setString(2, trace);
@@ -90,7 +90,7 @@ public class TraceDBMySQl implements TraceDB{
 
     @Override
     public void createTable() {
-        final String createTableSQL = "create table traces (monitorID  varchar(400) not null , trace LONGTEXT, length int, primary key (monitorID));";
+        final String createTableSQL = "create table " + tableName + " (monitorID  varchar(400) not null , trace LONGTEXT, length int, primary key (monitorID));";
         try (Statement statement = getConnection().createStatement()) {
             statement.execute(createTableSQL);
         } catch (SQLException e) {
@@ -100,7 +100,7 @@ public class TraceDBMySQl implements TraceDB{
 
     @Override
     public int uniqueTraces() {
-        String query = "select count(distinct(trace)) from traces";
+        String query = "select count(distinct(trace)) from " + tableName + ";";
         int count = -1;
         try (Statement statement = getConnection().createStatement()) {
             ResultSet rs = statement.executeQuery(query);
@@ -115,7 +115,7 @@ public class TraceDBMySQl implements TraceDB{
 
     @Override
     public int size() {
-        String query = "select count(*) from traces";
+        String query = "select count(*) from " + tableName + ";";
         int count = -1;
         try(Statement statement =  getConnection().createStatement()){
             ResultSet rs = statement.executeQuery(query);
@@ -130,7 +130,7 @@ public class TraceDBMySQl implements TraceDB{
 
     @Override
     public List<Integer> getTraceLengths() {
-        String query = "select length from traces";
+        String query = "select length from " + tableName + ";";
         List<Integer> lengths =  new ArrayList<>();
         try (Statement statement = getConnection().createStatement()) {
             ResultSet rs =  statement.executeQuery(query);
@@ -145,7 +145,7 @@ public class TraceDBMySQl implements TraceDB{
 
     @Override
     public Map<String, Integer> getTraceFrequencies() {
-        String query = "select count(*), trace from traces group by trace";
+        String query = "select count(*), trace from " + tableName + " group by trace";
         Map<String, Integer> traceFrequency = new HashMap<>();
         try(Statement statement = getConnection().createStatement()) {
             ResultSet rs = statement.executeQuery(query);
@@ -160,8 +160,8 @@ public class TraceDBMySQl implements TraceDB{
 
     @Override
     public void dump() {
-        String tableName = "traces";
-        final String SELECT_QUERY = "select * from traces into outfile '/var/lib/mysql-files/traaaces2.csv' fields terminated by ',';";
+//        String tableName = "traces";
+        final String SELECT_QUERY = "select * from " + tableName + " into outfile '/var/lib/mysql-files/" + tableName + ".csv' fields terminated by ',';";
         try(PreparedStatement preparedStatement = getConnection().prepareStatement(SELECT_QUERY)){
             ResultSet rs = preparedStatement.executeQuery();
         } catch (SQLException e) {
@@ -172,8 +172,8 @@ public class TraceDBMySQl implements TraceDB{
     public static void main(String[] args) {
         TraceDBMySQl traceDB = new TraceDBMySQl("dummy");
 //        traceDB.createTable();
-//        traceDB.put("Spec1#4", "[a,b,b,c]", 4);
-//        traceDB.put("Spec1#5", "[a,b,b,c,c,c,c]", 7);
+//        traceDB.put("Spec1#6", "[a,b,b,c]", 4);
+//        traceDB.put("Spec1#7", "[a,b,b,c,c,c,c]", 7);
 
 
 //        traceDB.update("Spec1#1", "[a,b,b,c,d]", 5);
