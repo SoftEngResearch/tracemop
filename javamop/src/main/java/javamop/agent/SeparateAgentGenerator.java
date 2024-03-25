@@ -78,11 +78,11 @@ public final class SeparateAgentGenerator {
         final int ajcReturn;
         if (isEmop) {
             ajcReturn = runCommandDir(outputDir, verbose, "java", "-cp", completeClassPath,
-                    "org.aspectj.tools.ajc.Main", "-1.6", "-d", agentDir.getAbsolutePath(),
+                    "org.aspectj.tools.ajc.Main", "-1.8", "-d", agentDir.getAbsolutePath(),
                     "-outxml", agentAspect.getAbsolutePath() + "/*.aj");
         } else {
             ajcReturn = runCommandDir(outputDir, verbose, "java", "-cp", completeClassPath,
-                    "org.aspectj.tools.ajc.Main", "-1.6", "-d", agentDir.getAbsolutePath(),
+                    "org.aspectj.tools.ajc.Main", "-1.8", "-d", agentDir.getAbsolutePath(),
                     "-outxml", agentAspect.getAbsolutePath());
         }
 
