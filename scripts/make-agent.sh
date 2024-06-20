@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 
-if [ $# != 7 ]; then
+if [ $# != 7 ] && { [ $# != 6 ] || [ $4 == "track" ]; }; then
     echo "Usage: $0 property-directory output-directory verbose-mode tracking-mode trace-dir agent-name db-conf"
     echo "       verbose-mode: {verbose|quiet}"
     echo "       tracking-mode: {track|no-track}"
