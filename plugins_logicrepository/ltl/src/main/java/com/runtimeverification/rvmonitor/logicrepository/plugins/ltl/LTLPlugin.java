@@ -8,6 +8,7 @@ import com.runtimeverification.rvmonitor.logicrepository.plugins.ltl.parser.LTLP
 
 import java.io.ByteArrayOutputStream;
 import java.util.HashSet;
+import java.util.Iterator;
 
 public class LTLPlugin extends LogicPlugin {
     
@@ -24,6 +25,14 @@ public class LTLPlugin extends LogicPlugin {
         
         LTLParser ltlParser = LTLParser.parse(logicStr);
         LTLFormula ltl = ltlParser.getFormula();
+
+        Iterator<Atom> iterator = ltl.atoms().iterator();
+        while (iterator.hasNext()) {
+            Atom atom = iterator.next();
+            if (!events.contains(atom)) {
+                iterator.remove();
+            }
+        }
         
         ltl = ltl.simplify();
         
