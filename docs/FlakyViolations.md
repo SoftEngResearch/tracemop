@@ -1,4 +1,4 @@
-# Debug Flaky Violations
+# Debugging Flaky Violations
 
 TraceMOP allows comparing traces across multiple runs. This is especially helpful for debugging flaky violations.
 
