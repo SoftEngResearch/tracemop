@@ -23,6 +23,7 @@ If your project does not use Maven, your can monitor a Java program using TraceM
 ```bash
 # If you are using the TraceMOP Java agent that track traces, you must also run the below commands:
 export OUTPUT_DIRECTORY="set your output directory here"  # specify where to store the traces
+export RVMLOGGINGLEVEL=UNIQUE  # skip this command if you want to show all violations in STDOUT. Otherwise, TraceMOP will generate a violation-counts file in the project's directory that contains only the unique violations
 export TRACEDB_PATH=${OUTPUT_DIRECTORY}/all-traces
 export TRACEDB_CONFIG_PATH=${OUTPUT_DIRECTORY}/.trace-db.config
 export TRACEDB_RANDOM=1 && export COLLECT_MONITORS=1 && export COLLECT_TRACES=1

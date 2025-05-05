@@ -196,6 +196,7 @@ If running with trace collection, the output directory `all-traces` directory co
 If TraceMOP raised violations during RV, TraceMOP will save the violations to file.
 For the `flowpowered/commons` example above, when running in Docker, the violation file is located at: `~/project/violation-counts`
 
+You can learn how to interpret these files in [TracesFiles.md](docs/TracesFiles.md).
 [You can also watch our demo video for a more detailed explanation.](https://youtu.be/xxtUUBlsCJc?feature=shared&t=71)
 
 ## Configuration
