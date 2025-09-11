@@ -177,7 +177,7 @@ public class EventManager {
         ret += "pointcut " + commonPointcut + "() : ";
 
         ret += "!within(com.runtimeverification.rvmonitor.java.rt.RVMObject+) " +
-                "&& !adviceexecution() && BaseAspect.notwithin();\n";
+                "&& !adviceexecution() && BaseAspect.notwithin();\n\n";
 
         int numAdvice = 1;
         advices = this.adjustAdviceOrder();

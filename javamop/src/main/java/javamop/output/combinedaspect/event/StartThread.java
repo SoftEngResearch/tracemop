@@ -74,12 +74,10 @@ public class StartThread {
         ret += "|| (initialization(Thread+.new(ThreadGroup+, Runnable+,..)) " +
             "&& args(ThreadGroup, r,..)))";
         ret += " && " + commonPointcut + "() {\n";
-        ret += "while (!" + globalLock.getName() + ".tryLock()) {\n";
-        ret += "Thread.yield();\n";
-        ret += "}\n";
-        ret += runnableMap + ".put(t, r);\n";
-        ret += globalLock.getName() + ".unlock();\n";
-        ret += "}\n";
+        ret += globalLock.getAcquireCode();
+	ret += runnableMap + ".put(t, r);\n";
+        ret += globalLock.getReleaseCode();
+	ret += "}\n";
         
         return ret;
     }
@@ -96,16 +94,30 @@ public class StartThread {
             threadVar + ") )";
         ret += " && " + commonPointcut + "() {\n";
         
+	if (mopSpec.getParameters().size() > 0) {
+	    ret += "int objHash = System.identityHashCode(" + threadVar + ");\n";
+	} else {
+	    ret += "int locHash = System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n";
+	}
+
+	ret += globalLock.getAcquireCode();
+	if (mopSpec.getParameters().size() > 0) {
+	    ret += "if (!objIds.contains(objHash)) {\n";
+	} else {
+	    ret += "if (!violationPoints.contains(locHash)) {\n";
+	}
+
         ret += "if(Thread.currentThread() == " + threadVar + ") {\n";
         if (event.getThreadVar() != null && event.getThreadVar().length() != 0) {
             ret += "Thread " + event.getThreadVar() + " = Thread.currentThread();\n";
         }
         
+	ret += "boolean retValue = ";
         ret += EventManager.EventMethodHelper.methodName(eventBody.getMOPSpec(), event,
             eventBody.fileName);
         ret += "(";
         if (JavaMOPMain.options.internalBehaviorObserving || JavaMOPMain.options.locationFromAjc) {
-            ret += "thisJoinPointStaticPart, thisEnclosingJoinPointStaticPart";
+            ret += "thisJoinPointStaticPart";
 
             if (event.getThreadVar() != null && event.getThreadVar().length() != 0) {
                 ret += ", " + event.getThreadVar();
@@ -116,9 +128,17 @@ public class StartThread {
             }
         }
         ret += ");\n";
-        
+      
+       	ret += "if (!retValue) {\n";
+	if (mopSpec.getParameters().size() > 0) {
+	    ret += "objIds.add(objHash);\n";
+        } else {
+    	    ret += "violationPoints.add(locHash);\n";
+	}	    
         ret += "}\n";
         
+	ret += "}\n}\n";
+	ret += globalLock.getReleaseCode();
         ret += "}\n";
         
         return ret;
@@ -135,19 +155,31 @@ public class StartThread {
         ret += "before (Runnable " + runnableVar + "): ( execution(void Runnable+.run()) " +
             "&& !execution(void Thread+.run()) && target(" + runnableVar + ") )";
         ret += " && " + commonPointcut + "() {\n";
-        ret += "while (!" + globalLock.getName() + ".tryLock()) {\n";
-        ret += "Thread.yield();\n";
-        ret += "}\n";
-        ret += "if(" + runnableMap + ".get(Thread.currentThread()) == " + runnableVar + ") {\n";
+        
+	if (mopSpec.getParameters().size() > 0) {
+	    ret += "int objHash = System.identityHashCode(" + runnableVar + ");\n";
+	} else {
+	    ret += "int locHash = System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n";
+	}
+
+	ret += globalLock.getAcquireCode();
+	if (mopSpec.getParameters().size() > 0) {
+	    ret += "if (!objIds.contains(objHash)) {\n";
+	} else {
+	    ret += "if (!violationPoints.contains(locHash)) {\n";
+	}
+
+	ret += "if(" + runnableMap + ".get(Thread.currentThread()) == " + runnableVar + ") {\n";
         if (event.getThreadVar() != null && event.getThreadVar().length() != 0) {
             ret += "Thread " + event.getThreadVar() + " = Thread.currentThread();\n";
         }
         
+	ret += "boolean retValue = ";
         ret += EventManager.EventMethodHelper.methodName(eventBody.getMOPSpec(), event,
             eventBody.fileName);
         ret += "(";
         if (JavaMOPMain.options.internalBehaviorObserving || JavaMOPMain.options.locationFromAjc) {
-            ret += "thisJoinPointStaticPart, thisEnclosingJoinPointStaticPart";
+            ret += "thisJoinPointStaticPart";
 
             if (event.getThreadVar() != null && event.getThreadVar().length() != 0) {
                 ret += ", " + event.getThreadVar();
@@ -158,10 +190,17 @@ public class StartThread {
             }
         }
         ret += ");\n";
-        
+      
+       	ret += "if (!retValue) {\n";
+	if (mopSpec.getParameters().size() > 0) {
+	    ret += "objIds.add(objHash);\n";
+        } else {
+            ret += "violationPoints.add(locHash);\n";
+        }	    
         ret += "}\n";
-        ret += globalLock.getName() + ".unlock();\n";
-        
+
+	ret += "}\n}\n";
+	ret += globalLock.getReleaseCode();        
         ret += "}\n";
         return ret;
     }
@@ -175,6 +214,7 @@ public class StartThread {
         
         ret += "before (): " + "(execution(void *.main(..)) )";
         ret += " && " + commonPointcut + "() {\n";
+	ret += globalLock.getAcquireCode();
         ret += "if(" + mainThread + " == null){\n";
         ret += mainThread + " = Thread.currentThread();\n";
         
@@ -186,7 +226,7 @@ public class StartThread {
             eventBody.fileName);
         ret += "(";
         if (JavaMOPMain.options.internalBehaviorObserving || JavaMOPMain.options.locationFromAjc) {
-            ret += "thisJoinPointStaticPart, thisEnclosingJoinPointStaticPart";
+            ret += "thisJoinPointStaticPart";
 
             if (event.getThreadVar() != null && event.getThreadVar().length() != 0) {
                 ret += ", " + event.getThreadVar();
@@ -199,6 +239,7 @@ public class StartThread {
         ret += ");\n";
         
         ret += "}\n";
+	ret += globalLock.getReleaseCode();
         ret += "}\n";
         ret += "\n";
         

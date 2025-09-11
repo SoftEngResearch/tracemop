@@ -3,6 +3,7 @@ package javamop.output.combinedaspect;
 
 import java.util.List;
 
+import javamop.JavaMOPMain;
 import javamop.util.MOPException;
 import javamop.output.MOPVariable;
 import javamop.output.combinedaspect.event.EventManager;
@@ -89,7 +90,19 @@ public class CombinedAspect {
         ret += this.statManager.advice();
         
         ret += this.lockManager.decl();
-        
+
+	for (JavaMOPSpec spec : specs) {
+	    if (spec.getParameters().size() > 0) { 
+	        ret += "HashSet<Integer> objIds = new HashSet<Integer>();\n"; 
+	    	if (!JavaMOPMain.options.internalBehaviorObserving) {
+		    ret += "HashMap<Integer, LinkedList<Integer>> locIdMap = new HashMap<Integer, LinkedList<Integer>>();\n\n"; 
+		    ret += "int MAX_CAPACITY = 32;\n";
+		}
+		ret += "\n";
+	    } else {
+	        ret += "HashSet<Integer> violationPoints = new HashSet<Integer>();\n\n";
+	    }
+	}
         ret += this.eventManager.advices();
         
         
