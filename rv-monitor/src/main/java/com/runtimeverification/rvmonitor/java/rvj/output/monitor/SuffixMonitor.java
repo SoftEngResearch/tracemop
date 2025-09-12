@@ -141,7 +141,7 @@ public class SuffixMonitor extends Monitor {
         ret += "final" + synch + "void event_" + event.getId() + "(";
         {
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint, ";
+                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, ";
             }
             RVMParameters params;
             if (Main.options.stripUnusedParameterInMonitor)
@@ -221,7 +221,7 @@ public class SuffixMonitor extends Monitor {
         ret += monitorVar + ".event_" + event.getId() + "(";
         {
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "joinpoint, enclosingJoinpoint, ";
+                ret += "joinpoint, ";
             }
 
             RVMParameters passing;

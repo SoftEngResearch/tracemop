@@ -29,9 +29,6 @@ public class GlobalLock {
         if (!Main.options.finegrainedlock) {
             ret += "static final ReentrantLock " + lock
                     + " = new ReentrantLock();\n";
-            // Why do we need this?
-            ret += "static final Condition " + lock + "_cond = " + lock
-                    + ".newCondition();\n";
         }
 
         return ret;

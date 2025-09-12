@@ -117,6 +117,21 @@ public class RVMOptions {
             converter = JavaMOPOptions.FileConverter.class)
     public File dbConfigFile = new File(System.getProperty("user.home"), ".trace-db.config");
 
+    @Parameter(names={"-alpha"},description = "[RLMOP] Learning rate")
+    public double alpha;
+    
+    @Parameter(names={"-epsilon"},description = "[RLMOP] Exploration probability")
+    public double epsilon;
+    
+    @Parameter(names={"-threshold"},description = "[RLMOP] Threshold for convergencee")
+    public double threshold;
+    
+    @Parameter(names={"-initc"},description = "[RLMOP] Initial action value for create")
+    public double initc;
+    
+    @Parameter(names={"-initn"},description = "[RLMOP] Initial action value for ncreate")
+    public double initn;
+
     public boolean isJarFile;
 
     public String jarFilePath;

@@ -168,6 +168,18 @@ public class CombinedOutput {
         this.isCodeGenerated = true;
     }
 
+    public String declareAgents() {
+        String ret = "";
+	for (RVMonitorSpec spec : specs) {
+	    if (spec.getParameters().size() > 0) {
+	        ret += ("private static HashMap<Integer, RLAgent> " + spec.getName() + "_agents = new HashMap<Integer, RLAgent>();\n");
+		ret += ("private static HashSet<Integer> " + spec.getName() + "_traces = new HashSet<Integer>();\n");
+	    }
+	}
+	ret += "\n";
+	return ret;
+    }
+
     @Override
     public String toString() {
         this.generateCode();
@@ -214,7 +226,8 @@ public class CombinedOutput {
         ret += this.activatorsManager.decl();
 
         ret += this.indexingTreeManager.decl();
-
+	
+	ret += this.declareAgents();
         {
             ICodeFormatter fmt = CodeFormatters.getDefault();
             this.runtimeServiceManager.getCode(fmt);

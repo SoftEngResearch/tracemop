@@ -67,7 +67,7 @@ public class Advice {
 
         this.activatorsManager = combinedOutput.activatorsManager;
 
-        this.globalLock = combinedOutput.lockManager.getLock();
+	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
         this.isSync = rvmSpec.isSync();
 
         this.advices.put(event,
@@ -173,8 +173,8 @@ public class Advice {
                     ret += activatorsManager.setValue(spec, true);
                     ret += ";\n";
                 }
-                if (isSync)
-                    ret += this.globalLock.getAcquireCode();
+                // if (isSync)
+                //     ret += this.globalLock.getAcquireCode();
             }
 
             Iterator<EventDefinition> iter;
@@ -189,8 +189,8 @@ public class Advice {
 
                 AdviceBody advice = advices.get(event);
 
-                ret += this.internalBehaviorObservableGenerator
-                        .generateEventMethodEnterCode(event);
+                // ret += this.internalBehaviorObservableGenerator
+                //         .generateEventMethodEnterCode(event);
                 ret += this.statManager.incEvent(advice.rvmSpec, event);
 
                 if (specsForChecking.contains(advice.rvmSpec)) {
@@ -247,14 +247,15 @@ public class Advice {
                         ret += "}\n";
                     }
                 }
-                ret += this.internalBehaviorObservableGenerator
-                        .generateEventMethodLeaveCode(event);
+                // ret += this.internalBehaviorObservableGenerator
+                //         .generateEventMethodLeaveCode(event);
             }
 
-            if (!Main.options.finegrainedlock) {
-                if (isSync)
-                    ret += this.globalLock.getReleaseCode();
-            }
+            // if (!Main.options.finegrainedlock) {
+            //     if (isSync)
+            //         ret += this.globalLock.getReleaseCode();
+            // }
+	    ret += "return true;\n";
         }
 
         return ret;
@@ -267,7 +268,7 @@ public class Advice {
         if (Main.options.inline) {
             ret += "void " + inlineFuncName + "(";
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint, ";
+                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, ";
             }
             ret += inlineParameters.parameterDeclString();
             if (ret.endsWith(", ")) {
@@ -281,11 +282,11 @@ public class Advice {
             ret += "}\n";
         }
 
-        ret += "public static final void " + pointcutName;
+        ret += "public static final boolean " + pointcutName;
         ret += "(";
 
         if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-            ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint, ";
+            ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, ";
         }
         ret += parameters.parameterDeclString();
         if (ret.endsWith(", ")) {
@@ -298,7 +299,7 @@ public class Advice {
         if (Main.options.inline) {
             ret += inlineFuncName + "(";
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint, ";
+                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, ";
             }
             ret += inlineParameters.parameterString();
             if (ret.endsWith(", ")) {

@@ -27,17 +27,14 @@ public class TraceUtil {
      * @param joinpoint I.e., thisJoinPointStaticPart from AspectJ,
      * @return A short location ID, e.g., loc2.
      */
-    public static Integer getShortLocation(JoinPoint.StaticPart joinpoint, JoinPoint.StaticPart enclosingJoinpoint) {
-        // IDE shows no usage, but monitors will call this method to get short ID
-        int methodLineNumber = enclosingJoinpoint.getSourceLocation().getLine(); // in case we have multiple methods with the same name
-        String fullLOC = ViolationRecorder.getLineOfCode(joinpoint) + methodLineNumber;
-        Integer shortLocation = locationMap.get(fullLOC);
-        if (shortLocation == null) {
-            // we do not have the fullLOC in the map; add it and return the shortLocation
-            shortLocation =  freshID++;
-            locationMap.put(fullLOC, shortLocation);
-        }
-        return shortLocation;
+    public static Integer getShortLocation(JoinPoint.StaticPart joinpoint) {
+        String loc = joinpoint.getSourceLocation().getWithinType().getName() + "(" + joinpoint.getSourceLocation().toString() + ")";
+	Integer locId = locationMap.get(loc);
+	if (locId == null) {
+	    locId = freshID++;
+	    locationMap.put(loc, locId);
+	}
+	return locId;
     }
 
     /**

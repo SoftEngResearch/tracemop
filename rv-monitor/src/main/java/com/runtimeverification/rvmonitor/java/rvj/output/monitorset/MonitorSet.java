@@ -110,6 +110,10 @@ public class MonitorSet {
         }
     }
 
+    public String getRVMSpecName() {
+	return rvmSpec.getName();
+    }
+
     public RVMVariable getName() {
         return setName;
     }
@@ -304,7 +308,7 @@ public class MonitorSet {
         ret += monitorSetVar + ".event_" + event.getId() + "(";
         {
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "joinpoint, enclosingJoinpoint, ";
+                ret += "joinpoint, ";
             }
 
             RVMParameters passing;
@@ -743,7 +747,7 @@ public class MonitorSet {
             ret += "final" + (synch ? " synchronized " : " ") + "void event_"
                     + eventName + "(";
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint, ";
+                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, ";
             }
             ret += parameters.parameterDeclString();
             if (ret.endsWith(", ")) {
