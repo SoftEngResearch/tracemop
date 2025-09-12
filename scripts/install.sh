@@ -13,8 +13,8 @@ while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
     -valg)
-      valg="$2"
-      shift 2
+      valg=true
+      shift 1
       ;;
     -spec)
       spec_name="$2"
