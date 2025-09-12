@@ -5,6 +5,12 @@ SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 TRACK=${1:-false}
 STATS=${2:-false}
 
+alpha=${3:-0.9}
+epsilon=${4:-0.1}
+threshold=${5:-0.0001}
+initc=${6:-5.0}
+initn=${7:-0.0}
+
 function install() {
   if [[ ${TRACK} == true ]]; then
     TRACK="track"
@@ -21,7 +27,7 @@ function install() {
   if [[ ! -f ${TRACK}-${STATS}-agent.jar ]]; then
     # Install TraceMOP's dependency
     echo "Install new JavaParser"
-    bash ${SCRIPT_DIR}/install-javaparser.sh
+    bash ${SCRI/PT_DIR}/install-javaparser.sh
   fi
   
   # Install TraceMOP
@@ -37,7 +43,7 @@ function install() {
     props="props-track"
   fi
 
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${alpha} ${epsilon} ${threshold} ${initc} ${initn}
   
   if [[ ${TRACK} == "track" ]]; then
     # Add aspect

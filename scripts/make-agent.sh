@@ -6,13 +6,19 @@
 #
 SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 
-if [[ $# != 7 && $# != 8 && $# != 9 ]]; then
+if [[ $# != 7 && $# != 8 && $# != 9 && $# != 10 && $# != 11 && $# != 12 && $# != 13 && $# != 14 ]]; then
     echo "Usage: $0 property-directory output-directory verbose-mode tracking-mode trace-dir agent-name db-conf stats violation-from-ajc"
     echo "       verbose-mode: {verbose|quiet}"
     echo "       tracking-mode: {track|no-track}"
     echo "       db-conf: file containing the database configurations to use"
     echo "       stats: {stats|no-stats}, optional default to no-stats"
     echo "       violation-from-ajc: {true|false}, optional default to true"
+
+    echo "       alpha: [Valg] learning rate, optional default to 0.9"
+    echo "       epsilon: [Valg] exploration probability, optional default to 0.1"
+    echo "       threshold: [Valg] threshold for convergence, optional default to 1e-4"
+    echo "       initc: [Valg] initial value for create, optional default to 5.0"
+    echo "       initn: [Valg] initial value for ncreate, optional default to 0.0"
     exit
 fi
 
@@ -25,6 +31,12 @@ agent_name=$6
 db_conf=$7
 stats=$8
 violation_from_ajc=$9
+
+alpha=${10}
+epsilon=${11}
+threshold=${12}
+initc=${13}
+initn=${14}
 
 function build_agent() {
     local agent_name=$1
@@ -49,7 +61,9 @@ function build_agent() {
         rv_monitor_flag="${rv_monitor_flag} -locationFromAjc"
         javamop_flag="${javamop_flag} -locationFromAjc"
     fi
-    
+   	
+    rv_monitor_flag="${rv_monitor_flag} -alpha ${alpha} -epsilon ${epsilon} -threshold ${threshold} -initc ${initc} -initn ${initn}"
+
     echo "Flags for javamop: ${javamop_flag}"
     echo "Flags for rv-monitor: ${rv_monitor_flag}"
 
