@@ -17,6 +17,7 @@ import com.runtimeverification.rvmonitor.java.rt.util.TraceUtil;
 import com.runtimeverification.rvmonitor.java.rvj.logicclient.LogicRepositoryConnector;
 import com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption;
 import com.runtimeverification.rvmonitor.java.rvj.parser.ast.RVMSpecFile;
+import com.runtimeverification.rvmonitor.java.rvj.parser.ast.rvmspec.RVMonitorSpec;
 import com.runtimeverification.rvmonitor.util.RVMException;
 import com.runtimeverification.rvmonitor.util.Tool;
 

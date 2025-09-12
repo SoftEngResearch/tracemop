@@ -65,11 +65,7 @@ function build_agent() {
         javamop_flag="${javamop_flag} -locationFromAjc"
     fi
    
-    if [[ ${valg} == "true" ]]; then
-	rv_monitor_flag="${rv_monitor_flag} -valg true -alpha 0.9 -epsilon 0.1 -threshold -0.0001 -initc 5.0 -initn 0.0"
-    else
-	rv_monitor_flag="${rv_monitor_flag} -valg false"
-    fi	
+    rv_monitor_flag="${rv_monitor_flag} -valg ${valg} ${spec_args[@]}"
 
     echo "Flags for javamop: ${javamop_flag}"
     echo "Flags for rv-monitor: ${rv_monitor_flag}"
@@ -82,7 +78,7 @@ function build_agent() {
 
     rm -rf ${props_dir}/classes/mop; mkdir -p ${props_dir}/classes/mop
     
-    rv-monitor -merge -d ${props_dir}/classes/mop/ ${props_dir}/*.rvm ${rv_monitor_flag} "${spec_args[@]}" #-v
+    rv-monitor -merge -d ${props_dir}/classes/mop/ ${props_dir}/*.rvm ${rv_monitor_flag}
 
     javac ${props_dir}/classes/mop/*.java
     if [ "${mode}" == "verbose" ]; then
