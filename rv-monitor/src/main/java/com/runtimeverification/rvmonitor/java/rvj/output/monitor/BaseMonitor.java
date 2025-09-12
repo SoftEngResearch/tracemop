@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
+import com.runtimeverification.rvmonitor.java.rvj.SpecConfig;
 import com.runtimeverification.rvmonitor.java.rvj.output.OptimizedCoenableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCode;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCodeNoNewLine;
@@ -463,10 +464,14 @@ public class BaseMonitor extends Monitor {
 
         ret += aftereventMonitoringCode;
 
-	ret += "if (recordEvents) {\n";
-	ret += "traceVal += (System.identityHashCode(joinpoint.getSourceLocation()) + random.nextInt());\n";
-	ret += "}\n";
-
+        if (Main.options.valg) {
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+                ret += "if (recordEvents) {\n";
+            	ret += "traceVal += (System.identityHashCode(joinpoint.getSourceLocation()) + random.nextInt());\n";
+            	ret += "}\n";
+            }
+        }
         if (retbool)
             ret += "return true;\n";
         ret += "}\n";
@@ -847,7 +852,7 @@ public class BaseMonitor extends Monitor {
                         + " = false;\n";
             }
         }
-	ret += "Random random = new Random(1);\n";
+    	ret += "Random random = new Random(1);\n";
         ret += "\n";
 
         if (this.isAtomicMonitorUsed()) {

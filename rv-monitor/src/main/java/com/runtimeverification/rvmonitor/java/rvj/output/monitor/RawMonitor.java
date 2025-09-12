@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
+import com.runtimeverification.rvmonitor.java.rvj.SpecConfig;
 import com.runtimeverification.rvmonitor.java.rvj.output.OptimizedCoenableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCode;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
@@ -108,14 +109,19 @@ public class RawMonitor extends Monitor {
             eventActionStr = eventActionStr.replaceAll("__SKIP",
                     BaseMonitor.skipEvent + " = true");
 
-	    int idx = eventActionStr.indexOf("has been violated on line");
-	    while (idx > 0) {
-		idx = eventActionStr.indexOf("}", idx);
-		eventActionStr = eventActionStr.substring(0, idx) +
-		"violated = true;\n" +
-		eventActionStr.substring(idx);
-		idx = eventActionStr.indexOf("has been violated on line", idx);
-	    }
+            if (Main.options.valg) { 
+                SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+                if (config != null && !config.disabled) {
+            	    int idx = eventActionStr.indexOf("has been violated on line");
+            	    while (idx > 0) {
+                		idx = eventActionStr.indexOf("}", idx);
+                		eventActionStr = eventActionStr.substring(0, idx) +
+                		"violated = true;\n" +
+                		eventActionStr.substring(idx);
+                		idx = eventActionStr.indexOf("has been violated on line", idx);
+            	    }
+                }
+            }
             eventAction = new RVMJavaCode(eventActionStr);
         }
 
@@ -298,9 +304,12 @@ public class RawMonitor extends Monitor {
         if (Main.options.statistics) {
             ret += stat.fieldDecl() + "\n";
         }
-
-	ret += "public boolean violated;\n";
-
+        if (Main.options.valg) { 
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+            	ret += "public boolean violated;\n";
+            }
+        }
         //constructor
         ret += monitorName + "(){\n";
         if (Main.options.statistics) {

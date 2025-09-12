@@ -6,6 +6,8 @@ import javamop.JavaMOPOptions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class RVMOptions {
     // Any stand-alone command line argument which is not required for a '-x' option
@@ -134,5 +136,7 @@ public class RVMOptions {
     public boolean stripUnusedParameterInMonitor = true;
 
     public boolean eliminatePresumablyRemnantCode;
+
+    public Map<String, SpecConfig> specConfigMap = new HashMap<>();
 
 }

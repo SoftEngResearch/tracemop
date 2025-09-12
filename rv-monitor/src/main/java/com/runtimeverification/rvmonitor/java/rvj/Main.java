@@ -136,24 +136,22 @@ public class Main {
         }
         RVMSpecFile combinedSpec = SpecCombiner.process(specs);
 
-	java.util.Set<String> specNames = new java.util.HashSet<>();
-	for (RVMonitorSpec spec : combinedSpec.getSpecs()) {
-	    specNames.add(spec.getName());
-	}
+    	java.util.Set<String> specNames = new java.util.HashSet<>();
+    	for (RVMonitorSpec spec : combinedSpec.getSpecs()) {
+    	    specNames.add(spec.getName());
+    	}
 
-	java.util.Set<String> configuredNames = new java.util.HashSet<>();
-	for (SpecConfig sc : options.specConfigs) {
-	    configuredNames.add(sc.name);
-	}
+        java.util.Set<String> configuredNames = options.specConfigMap.keySet();
 
-	for (String specName : specNames) {
-	    if (!configuredNames.contains(specName)) {
-	        SpecConfig defaultConfig = new SpecConfig();
-		defaultConfig.name = specName;
-		defaultConfig.disabled = false;
-		options.specConfigs.add(defaultConfig);
-	    }
-	}
+    	for (String specName : specNames) {
+    	    if (!configuredNames.contains(specName)) {
+    	        SpecConfig defaultConfig = new SpecConfig();
+    		defaultConfig.name = specName;
+    		defaultConfig.disabled = false;
+    		options.specConfigs.add(defaultConfig);
+            options.specConfigMap.put(specName, defaultConfig);
+    	    }
+    	}
 
         RVMProcessor processor = new RVMProcessor(outputName);
         String output = processor.process(combinedSpec);
@@ -276,6 +274,10 @@ public class Main {
 
         handleOptions(args, jc);
 
+        for (SpecConfig config : options.specConfigs) {
+            options.specConfigMap.put(config.name, config);
+        }
+    
         CodeGenerationOption.initialize();
 
         try {

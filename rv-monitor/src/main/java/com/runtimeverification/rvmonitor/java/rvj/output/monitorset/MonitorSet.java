@@ -111,7 +111,7 @@ public class MonitorSet {
     }
 
     public String getRVMSpecName() {
-	return rvmSpec.getName();
+    	return rvmSpec.getName();
     }
 
     public RVMVariable getName() {
