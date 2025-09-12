@@ -71,6 +71,9 @@ public class JavaMOPOptions {
     @Parameter(names={"-locationFromAjc"},description = "Get violation locations from AspectJ instead of stack trace.")
     public boolean locationFromAjc = true;
 
+    @Parameter(names={"-valg"}, description="Enable Valg")
+    public boolean valg;
+
     @Parameter(names={"-h","-help"}, description = "Show this help message.", help = true)
     private boolean help = false;
 

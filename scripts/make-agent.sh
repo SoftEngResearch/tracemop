@@ -65,19 +65,36 @@ function build_agent() {
         javamop_flag="${javamop_flag} -locationFromAjc"
     fi
    
-    rv_monitor_flag="${rv_monitor_flag} -valg ${valg} ${spec_args[@]}"
-
-    echo "Flags for javamop: ${javamop_flag}"
-    echo "Flags for rv-monitor: ${rv_monitor_flag}"
+    if [[ "$valg" == "true" ]]; then
+        rv_monitor_flag="${rv_monitor_flag} -valg"
+    fi
+    rv_monitor_flag="${rv_monitor_flag} ${spec_args[@]}"
 
     cp ${SCRIPT_DIR}/BaseAspect_new.aj ${props_dir}/BaseAspect.aj
 
     for spec in ${prop_files}; do
-        javamop -baseaspect ${props_dir}/BaseAspect.aj -emop ${spec} ${javamop_flag} #-d ${mop_out_dir}
+        spec_basename=$(basename "${spec}" .mop)
+	spec_flag=""
+
+	if [[ "${valg}" == "true" ]]; then
+	    disable_valg_for_this_spec=false
+	    for ((i = 0; i < ${#spec_args[@]}; i += 3)); do
+	        if [[ "${spec_args[i]}" == "-spec" && "${spec_args[i+1]}" == "${spec_basename}" && "${spec_args[i+2]}" == "off" ]]; then
+		    disable_valg_for_this_spec=true
+		    break
+		fi
+            done
+	    if [[ "$disable_valg_for_this_spec" == false ]]; then
+	        spec_flag="-valg"
+	    fi
+	fi
+	echo "Flags for javamop [${spec_basename}]: ${javamop_flag} ${spec_flag}"
+	javamop -baseaspect ${props_dir}/BaseAspect.aj -emop "${spec}" ${javamop_flag} ${spec_flag}
     done
 
     rm -rf ${props_dir}/classes/mop; mkdir -p ${props_dir}/classes/mop
     
+    echo "Flags for rv-monitor: ${rv_monitor_flag}"
     rv-monitor -merge -d ${props_dir}/classes/mop/ ${props_dir}/*.rvm ${rv_monitor_flag}
 
     javac ${props_dir}/classes/mop/*.java
