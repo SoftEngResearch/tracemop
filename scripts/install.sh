@@ -5,11 +5,29 @@ SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 TRACK=${1:-false}
 STATS=${2:-false}
 
-alpha=${3:-0.9}
-epsilon=${4:-0.1}
-threshold=${5:-0.0001}
-initc=${6:-5.0}
-initn=${7:-0.0}
+shift 2
+valg=false
+spec_configs=()
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -valg)
+      valg="$2"
+      shift 2
+      ;;
+    -spec)
+      spec_name="$2"
+      spec_values="$3"
+      spec_configs+=("-spec" "$spec_name" "$spec_values")
+      shift 3
+      ;;
+    *)
+      echo "[install.sh] Unknown option $1"
+      shift
+      ;;
+  esac
+done
 
 function install() {
   if [[ ${TRACK} == true ]]; then
@@ -43,7 +61,7 @@ function install() {
     props="props-track"
   fi
 
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${alpha} ${epsilon} ${threshold} ${initc} ${initn}
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${valg} "${spec_configs[@]}" 
   
   if [[ ${TRACK} == "track" ]]; then
     # Add aspect

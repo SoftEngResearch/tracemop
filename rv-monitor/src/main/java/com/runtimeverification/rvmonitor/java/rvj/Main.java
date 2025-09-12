@@ -135,6 +135,25 @@ public class Main {
         }
         RVMSpecFile combinedSpec = SpecCombiner.process(specs);
 
+	java.util.Set<String> specNames = new java.util.HashSet<>();
+	for (RVMonitorSpec spec : combinedSpec.getSpecs()) {
+	    specNames.add(spec.getName());
+	}
+
+	java.util.Set<String> configuredNames = new java.util.HashSet<>();
+	for (SpecConfig sc : options.specConfigs) {
+	    configuredNames.add(sc.name);
+	}
+
+	for (String specName : specNames) {
+	    if (!configuredNames.contains(specName)) {
+	        SpecConfig defaultConfig = new SpecConfig();
+		defaultConfig.name = specName;
+		defaultConfig.disabled = false;
+		options.specConfigs.add(defaultConfig);
+	    }
+	}
+
         RVMProcessor processor = new RVMProcessor(outputName);
         String output = processor.process(combinedSpec);
 
