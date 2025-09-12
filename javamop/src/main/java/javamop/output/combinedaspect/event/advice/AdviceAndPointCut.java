@@ -110,7 +110,7 @@ public class AdviceAndPointCut {
 
         this.globalLock = combinedAspect.lockManager.getLock();
         this.isSync = mopSpec.isSync();
-	this.specParams = mopSpec.getParameters();
+    	this.specParams = mopSpec.getParameters();
 
         this.advices.put(event, new AdviceBody(mopSpec, event, combinedAspect));
 
@@ -176,7 +176,7 @@ public class AdviceAndPointCut {
         this.specsForActivation.addAll(specsForActivation);
         this.specsForChecking.addAll(specsForChecking);
         this.isPointCutPrinted = isPointCutPrinted;
-	this.specParams = specParams;
+    	this.specParams = specParams;
     }
 
     /**
@@ -307,38 +307,42 @@ public class AdviceAndPointCut {
         else
             iter = this.events.iterator();
 
-	Iterator<MOPParameter> paramIter = parameters.iterator();
-	Iterator<MOPParameter> retValIter = retVal.iterator();
+        List<String> varNames = new ArrayList<String>();
+        int index = 0;
 
-	List<String> varNames = new ArrayList<String>();
+        if (JavaMOPMain.options.valg) { 
+        	Iterator<MOPParameter> paramIter = parameters.iterator();
+        	Iterator<MOPParameter> retValIter = retVal.iterator();
 
-	while (paramIter.hasNext()) {
-	    MOPParameter param = paramIter.next();
-	    if (specParams.contains(param)) {
-	        varNames.add(param.getName());
-	    }
-	}
-	while (retValIter.hasNext()) {
-	    MOPParameter retVal = retValIter.next();
-	    if (specParams.contains(retVal)) {
-	        varNames.add(retVal.getName());
-	    }
-	}
-	if (specParams.size() == 0) {
-	    ret += "int locHash = System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n\n";
-	    ret += this.globalLock.getAcquireCode();
-	    ret += "if (!violationPoints.contains(locHash)) {\n";
-	}
-	else if (varNames.size() > 0) {
-	    ret += "int objHash = ";
-	    for (String vn : varNames) {
-	        ret += ("System.identityHashCode(" + vn + ") + ");
-	    }
-	    ret = ret.substring(0, ret.length() -3) + ";\n\n";
-	    ret += this.globalLock.getAcquireCode();
-	    ret += "if (!objIds.contains(objHash)) {\n";
-	}
-	int index = 0;
+        	while (paramIter.hasNext()) {
+           	    MOPParameter param = paramIter.next();
+        	    if (specParams.contains(param)) {
+        	        varNames.add(param.getName());
+        	    }
+        	}
+        	while (retValIter.hasNext()) {
+        	    MOPParameter retVal = retValIter.next();
+        	    if (specParams.contains(retVal)) {
+        	        varNames.add(retVal.getName());
+        	    }
+        	}
+        	if (specParams.size() == 0) {
+        	    ret += "int locHash = System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n\n";
+        	    ret += this.globalLock.getAcquireCode();
+        	    ret += "if (!violationPoints.contains(locHash)) {\n";
+        	}
+        	else if (varNames.size() > 0) {
+        	    ret += "int objHash = ";
+        	    for (String vn : varNames) {
+        	        ret += ("System.identityHashCode(" + vn + ") + ");
+        	    }
+        	    ret = ret.substring(0, ret.length() -3) + ";\n\n";
+        	    ret += this.globalLock.getAcquireCode();
+        	    ret += "if (!objIds.contains(objHash)) {\n";
+        	}
+        } else {
+            ret += this.globalLock.getAcquireCode();
+        }
         while (iter.hasNext()) {
             EventDefinition event = iter.next();
 
@@ -357,12 +361,14 @@ public class AdviceAndPointCut {
                         + "_count");
                 ret += "if (" + countCond + ") {\n";
             }
-	    if (index == 0) {
-	        ret += "boolean retValue = ";
-	    } else {
-	        ret += "if (retValue) {\n";
-		ret += "retValue &= ";
-	    }
+            if (JavaMOPMain.options.valg) { 
+        	    if (index == 0) {
+        	        ret += "boolean retValue = ";
+        	    } else {
+        	        ret += "if (retValue) {\n";
+        		ret += "retValue &= ";
+        	    }
+            }
             ret += EventManager.EventMethodHelper.methodName(advice.mopSpec, event,
                     this.fileName);
             ret += "(";
@@ -415,39 +421,42 @@ public class AdviceAndPointCut {
             }
 
             ret += ");\n";
-
-	    if (index > 0) {
-	        ret += "}\n";
-	    }
-	    	
+        
+            if (JavaMOPMain.options.valg && index > 0) { 
+                ret += "}\n";
+            }	
             if (countCond != null && countCond.length() != 0) {
                 ret += "}\n";
             }
-	    index++;
+            if (JavaMOPMain.options.valg) { 
+        	    index++;
+            }
         }
-	if (specParams.size() == 0) {
-	    ret += "if (!retValue) {\n";
-	    ret += "violationPoints.add(locHash);\n";
-	    ret += "}\n}\n";
-	} else if (varNames.size() > 0) {
-	    ret += "if (!retValue) {\n";
-	    if (!JavaMOPMain.options.internalBehaviorObserving) {
-	        ret += "int locHash = (int) Thread.currentThread().getId() + System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n";
-		ret += "if (!locIdMap.containsKey(locHash)) {\n";
-		ret += "locIdMap.put(locHash, new LinkedList<Integer>());\n";
-		ret += "}\n";
-		ret += "LinkedList<Integer> locIds = locIdMap.get(locHash);\n";
-		ret += "if (locIds.size() > MAX_CAPACITY) {\n";
-		ret += "objIds.remove(locIds.removeFirst());\n";
-		ret += "}\n";
-	    }
-	    ret += "objIds.add(objHash);\n";
-	    if (!JavaMOPMain.options.internalBehaviorObserving) {
-	        ret += "locIds.add(objHash);\n";
-	    }
-	    ret += "}\n}\n";
-	}
-	ret += this.globalLock.getReleaseCode();
+        if (JavaMOPMain.options.valg) { 
+        	if (specParams.size() == 0) {
+        	    ret += "if (!retValue) {\n";
+        	    ret += "violationPoints.add(locHash);\n";
+        	    ret += "}\n}\n";
+        	} else if (varNames.size() > 0) {
+        	    ret += "if (!retValue) {\n";
+        	    if (!JavaMOPMain.options.internalBehaviorObserving) {
+        	        ret += "int locHash = (int) Thread.currentThread().getId() + System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n";
+        		ret += "if (!locIdMap.containsKey(locHash)) {\n";
+        		ret += "locIdMap.put(locHash, new LinkedList<Integer>());\n";
+        		ret += "}\n";
+        		ret += "LinkedList<Integer> locIds = locIdMap.get(locHash);\n";
+        		ret += "if (locIds.size() > MAX_CAPACITY) {\n";
+        		ret += "objIds.remove(locIds.removeFirst());\n";
+        		ret += "}\n";
+        	    }
+        	    ret += "objIds.add(objHash);\n";
+        	    if (!JavaMOPMain.options.internalBehaviorObserving) {
+        	        ret += "locIds.add(objHash);\n";
+        	    }
+        	    ret += "}\n}\n";
+        	}
+        }
+    	ret += this.globalLock.getReleaseCode();
 
         if (aroundAdviceReturn != null)
             ret += aroundAdviceReturn;

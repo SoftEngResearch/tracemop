@@ -118,7 +118,9 @@ public class EndThread {
             } else {
                 ret += "int locHash = System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n";
             }
-            ret += globalLock.getAcquireCode();
+        }
+        ret += globalLock.getAcquireCode();
+        if (JavaMOPMain.options.valg) {
             if (mopSpec.getParameters().size() > 0) {
                 ret += "if (!objIds.contains(objHash)) {\n";
             } else {
@@ -164,8 +166,8 @@ public class EndThread {
         
         if (JavaMOPMain.options.valg) {
             ret += "}\n}\n";
-            ret += globalLock.getReleaseCode();
         }
+        ret += globalLock.getReleaseCode();
         ret += "}\n";
         
         return ret;
@@ -189,14 +191,15 @@ public class EndThread {
             } else {
                 ret += "int locHash = System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n";
             }
-            ret += globalLock.getAcquireCode();
+        }
+        ret += globalLock.getAcquireCode();
+        if (JavaMOPMain.options.valg) {
             if (mopSpec.getParameters().size() > 0) {
                 ret += "if (!objIds.contains(objHash)) {\n";
             } else {
                 ret += "if (!violationPoints.contains(locHash)) {\n";
             }
         }
-
         ret += "if(" + runnableMap + ".get(Thread.currentThread()) == " + runnableVar + ") {\n";
         if (event.getThreadVar() != null && event.getThreadVar().length() != 0) {
             ret += "Thread " + event.getThreadVar() + " = Thread.currentThread();\n";
@@ -234,8 +237,8 @@ public class EndThread {
     
         if (JavaMOPMain.options.valg) {    
             ret += "}\n}\n";
-            ret += globalLock.getReleaseCode();
         }
+        ret += globalLock.getReleaseCode();
         ret += "}\n";
         
         return ret;
@@ -325,7 +328,7 @@ public class EndThread {
         String ret = "";
         MOPVariable t = new MOPVariable("t");
         ret += globalLock.getAcquireCode();
-    if (event.getThreadVar() != null && event.getThreadVar().length() != 0){
+        if (event.getThreadVar() != null && event.getThreadVar().length() != 0){
             ret += "for(Thread " + event.getThreadVar() + " : " + threadSet + ") {\n";
             ret += threadSet + ".remove(" + event.getThreadVar() + ");\n";
         } else {
