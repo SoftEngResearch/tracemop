@@ -26,66 +26,66 @@ public class RLAgent {
     public boolean convStatus;
 
     public RLAgent(HashSet<Integer> uniqueTraces, 
-	double alpha, double epsilon, double threshold, double initc, double initn) {
+        double alpha, double epsilon, double threshold, double initc, double initn) {
         this.uniqueTraces = uniqueTraces;
 
-	this.ALPHA = alpha;
-	this.EPSILON = epsilon;
-	this.THRESHOLD = threshold;
+	    this.ALPHA = alpha;
+    	this.EPSILON = epsilon;
+    	this.THRESHOLD = threshold;
 
-	this.Qc = initc;
-	this.Qn = initn;
+    	this.Qc = initc;
+    	this.Qn = initn;
     }
 
     private void checkConverged() {
-	if (Math.abs(1.0 - Math.abs(Qc - Qn)) < THRESHOLD) {
-	    converged = true;
-	    convStatus = (Qn < Qc) ? true : false;
-	} 
+    	if (Math.abs(1.0 - Math.abs(Qc - Qn)) < THRESHOLD) {
+    	    converged = true;
+    	    convStatus = (Qn < Qc) ? true : false;
+    	} 
     }
 
     public boolean decideAction() { 
-	// Initial Action Selection 
-	if (timeStep++ == 0) {
-	    return true;
-	}
-	// Learning Converged 
-	if (converged) {
-	    return convStatus;
-	}
-	if (monitor != null) {
-	    numTotTraces++;
-	    if (!uniqueTraces.contains(monitor.traceVal)) {
-		uniqueTraces.add(monitor.traceVal);
-	        reward = 1.0;
-	    } else {
-		numDupTraces++;
-	        reward = 0.0;
-	    }
-	    Qc = Qc + ALPHA * (reward - Qc);
-	} else {
-	    reward = (double)numDupTraces/numTotTraces;
-	    Qn = Qn + ALPHA * (reward - Qn);
+    	// Initial Action Selection 
+    	if (timeStep++ == 0) {
+    	    return true;
+    	}
+    	// Learning Converged 
+    	if (converged) {
+    	    return convStatus;
+    	}
+    	if (monitor != null) {
+    	    numTotTraces++;
+    	    if (!uniqueTraces.contains(monitor.traceVal)) {
+     		    uniqueTraces.add(monitor.traceVal);
+    	        reward = 1.0;
+    	    } else {
+        		numDupTraces++;
+    	        reward = 0.0;
+    	    }
+    	    Qc = Qc + ALPHA * (reward - Qc);
+    	} else {
+    	    reward = (double)numDupTraces/numTotTraces;
+    	    Qn = Qn + ALPHA * (reward - Qn);
         }
-	checkConverged();
+    	checkConverged();
 	
-	// Exploration Phase
+    	// Exploration Phase
         if (!converged && Math.random() < EPSILON) {
-	    Random random = new Random();
-	    return random.nextBoolean();
-	} 	   
-	// Exploitation Phase
-	return (Qn <= Qc) ? true : false;
+    	    Random random = new Random();
+    	    return random.nextBoolean();
+    	} 	   
+    	// Exploitation Phase
+    	return (Qn <= Qc) ? true : false;
     }
 
     public void setMonitor(AbstractMonitor monitor) {
         this.monitor = monitor;
-	if (converged) {
-	    monitor.recordEvents = false;
-	}
+    	if (converged) {
+    	    monitor.recordEvents = false;
+    	}
     }
 
     public void clearMonitor() {
-	this.monitor = null;
+    	this.monitor = null;
     }
 }
