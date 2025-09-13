@@ -9,6 +9,7 @@ package com.runtimeverification.rvmonitor.java.rvj;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.List;
 import java.util.ArrayList;
 
 import com.beust.jcommander.JCommander;
@@ -268,11 +269,23 @@ public class Main {
      *            The command-line arguments.
      */
     public static void main(String[] args) {
+        List<String> fixedArgs = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            if ("-spec".equals(args[i])) {
+                fixedArgs.add("-spec");
+                fixedArgs.add(args[i + 1] + " " + args[i + 2]);
+                i += 2; 
+            } else {
+                fixedArgs.add(args[i]);
+            }
+        }      
+        String[] fixedArgsArray = fixedArgs.toArray(new String[0]);
+        
         options = new RVMOptions();
-        JCommander jc = initializeJCommander(args);
+        JCommander jc = initializeJCommander(fixedArgsArray);
         if (jc == null) return;
 
-        handleOptions(args, jc);
+        handleOptions(fixedArgsArray, jc);
 
         for (SpecConfig config : options.specConfigs) {
             options.specConfigMap.put(config.name, config);

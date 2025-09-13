@@ -122,7 +122,7 @@ public class RVMOptions {
     @Parameter(names={"-valg"},description = "Enable Valg")
     public boolean valg;
 
-    @Parameter(names = "-spec", description = "Hyperparameters for spec(s)", converter = SpecConfigConverter.class)
+    @Parameter(names = "-spec", description = "Hyperparameters for spec(s)", converter = SpecConfigConverter.class, splitter = NoSplitter.class)
     public List<SpecConfig> specConfigs = new ArrayList<>();
 
     public boolean isJarFile;

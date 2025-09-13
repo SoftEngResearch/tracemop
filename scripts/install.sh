@@ -17,9 +17,13 @@ while [[ $# -gt 0 ]]; do
       shift 1
       ;;
     -spec)
+      if [[ $# -lt 3 ]]; then
+        echo "[install.sh] Missing argument for -spec"
+        exit 1
+      fi
       spec_name="$2"
-      spec_values="$3"
-      spec_configs+=("-spec" "$spec_name" "$spec_values")
+      spec_value="$3"
+      spec_configs+=("-spec" "$spec_name" "$spec_value")
       shift 3
       ;;
     *)

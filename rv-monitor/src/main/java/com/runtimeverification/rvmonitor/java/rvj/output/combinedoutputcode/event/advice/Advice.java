@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
+import com.runtimeverification.rvmonitor.java.rvj.SpecConfig;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMonitorStatistics;
 import com.runtimeverification.rvmonitor.java.rvj.output.combinedoutputcode.ActivatorManager;
@@ -43,6 +44,7 @@ public class Advice {
     private final InternalBehaviorObservableCodeGenerator internalBehaviorObservableGenerator;
 
     private boolean isCodeGenerated = false;
+    private String specName;
 
     public Advice(RVMonitorSpec rvmSpec, EventDefinition event,
             CombinedOutput combinedOutput) throws RVMException {
@@ -67,7 +69,7 @@ public class Advice {
 
         this.activatorsManager = combinedOutput.activatorsManager;
 
-	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
+    	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
         this.isSync = rvmSpec.isSync();
 
         this.advices.put(event,
@@ -85,6 +87,8 @@ public class Advice {
 
         this.internalBehaviorObservableGenerator = combinedOutput
                 .getInternalBehaviorObservableGenerator();
+
+        this.specName = rvmSpec.getName();
     }
 
     public String getPointCutName() {
@@ -255,9 +259,13 @@ public class Advice {
             //     if (isSync)
             //         ret += this.globalLock.getReleaseCode();
             // }
-	    ret += "return true;\n";
+            if (Main.options.valg) {
+                SpecConfig config = Main.options.specConfigMap.get(this.specName);
+                if (config != null && !config.disabled) {
+                	ret += "return true;\n";
+                }
+            }
         }
-
         return ret;
     }
 
@@ -281,8 +289,14 @@ public class Advice {
 
             ret += "}\n";
         }
-
-        ret += "public static final boolean " + pointcutName;
+        boolean returnBool = false;
+        if (Main.options.valg) {
+            SpecConfig config = Main.options.specConfigMap.get(this.specName);
+            if (config != null && !config.disabled) {
+                returnBool = true;
+            }   
+        }
+        ret += "public static final " + (returnBool ? "boolean" : "void") + " " + pointcutName;                   
         ret += "(";
 
         if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {

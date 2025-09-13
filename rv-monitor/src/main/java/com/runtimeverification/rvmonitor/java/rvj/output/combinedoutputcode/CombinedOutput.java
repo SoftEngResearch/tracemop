@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
+import com.runtimeverification.rvmonitor.java.rvj.SpecConfig;
 import com.runtimeverification.rvmonitor.java.rvj.output.EnableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.helper.CodeFormatters;
@@ -170,14 +171,21 @@ public class CombinedOutput {
 
     public String declareAgents() {
         String ret = "";
-	for (RVMonitorSpec spec : specs) {
-	    if (spec.getParameters().size() > 0) {
-	        ret += ("private static HashMap<Integer, RLAgent> " + spec.getName() + "_agents = new HashMap<Integer, RLAgent>();\n");
-		ret += ("private static HashSet<Integer> " + spec.getName() + "_traces = new HashSet<Integer>();\n");
-	    }
-	}
-	ret += "\n";
-	return ret;
+        for (RVMonitorSpec spec : specs) {
+            if (spec.getParameters().size() == 0)
+                continue;
+
+            String specName = spec.getName();
+            SpecConfig config = Main.options.specConfigMap.get(specName);
+            boolean isDisabled = config != null && config.disabled;
+
+            if (!isDisabled) {
+                ret += ("private static HashMap<Integer, RLAgent> " + spec.getName() + "_agents = new HashMap<Integer, RLAgent>();\n");
+        		ret += ("private static HashSet<Integer> " + spec.getName() + "_traces = new HashSet<Integer>();\n");
+    	    }
+    	}
+    	ret += "\n";
+    	return ret;
     }
 
     @Override
@@ -226,8 +234,10 @@ public class CombinedOutput {
         ret += this.activatorsManager.decl();
 
         ret += this.indexingTreeManager.decl();
-	
-	ret += this.declareAgents();
+
+        if (Main.options.valg) {	
+        	ret += this.declareAgents();
+        }
         {
             ICodeFormatter fmt = CodeFormatters.getDefault();
             this.runtimeServiceManager.getCode(fmt);

@@ -32,45 +32,55 @@ shift 10
 
 spec_args=()
 while [[ $# -gt 0 ]]; do
-  if [[ "$1" == "-spec" ]]; then
-    spec_args+=("-spec" "$2" "$3")
-    shift 3
-  else
-    echo "[make-agent.sh] Unknown option $1"
-    shift
-  fi
+    if [[ "$1" == "-spec" ]]; then
+        if [[ $# -lt 3 ]]; then
+            echo "[make-agent.sh] Missing arguments for -spec"
+            exit 1
+        fi
+        spec_name="$2"
+        spec_value="$3"
+        spec_args+=("-spec" "$spec_name" "$spec_value")
+        shift 3
+    else
+        break
+    fi
 done
 
 function build_agent() {
     local agent_name=$1
     local prop_files=${props_dir}/*.mop
     local javamop_flag=""
-    local rv_monitor_flag=""
+    local rv_monitor_flag=()
 
     if [[ ${stats} == "stats" ]]; then
         # statistics: add -s flag to both javamop and rv-monitor
         javamop_flag="-s"
-        rv_monitor_flag="-s"
+        rv_monitor_flag+=("-s")
     fi
     
     if [[ ${track} == "track" ]]; then
         # collect traces, add flags to rv-monitor, and add -internalBehaviorObserving to javamop
         javamop_flag="${javamop_flag} -internalBehaviorObserving" # this basically add AspectJ's thisJoinPointStaticPart to method signatures, because to collect traces, we must get location from ajc
-        rv_monitor_flag="${rv_monitor_flag} -trackEventLocations -computeUniqueTraceStats -storeEventLocationMapFile -artifactsDir ${trace_dir} -dbConfigFile ${db_conf}"
+        rv_monitor_flag+=("-trackEventLocations" "-computeUniqueTraceStats" "-storeEventLocationMapFile" "-artifactsDir" "$trace_dir" "-dbConfigFile" "$db_conf")
     fi
     
     if [[ ${violation_from_ajc} != "false" ]]; then
         # get location from AspectJ (default), add -locationFromAjc flag to both javamop and rv-monitor
-        rv_monitor_flag="${rv_monitor_flag} -locationFromAjc"
         javamop_flag="${javamop_flag} -locationFromAjc"
+        rv_monitor_flag+=("-locationFromAjc")
     fi
    
     if [[ "$valg" == "true" ]]; then
-        rv_monitor_flag="${rv_monitor_flag} -valg"
+        rv_monitor_flag+=("-valg")
     fi
-    rv_monitor_flag="${rv_monitor_flag} ${spec_args[@]}"
-t
+
+    rv_monitor_flag+=("${spec_args[@]}")
+
     cp ${SCRIPT_DIR}/BaseAspect_new.aj ${props_dir}/BaseAspect.aj
+    
+    if [[ "${valg}" != "true" ]]; then
+        echo "Flags for javamop: ${javamop_flag}"
+    fi
 
     for spec in ${prop_files}; do
         spec_basename=$(basename "${spec}" .mop)
@@ -79,23 +89,27 @@ t
         if [[ "${valg}" == "true" ]]; then
             disable_valg_for_this_spec=false
             for ((i = 0; i < ${#spec_args[@]}; i += 3)); do
-                if [[ "${spec_args[i]}" == "-spec" && "${spec_args[i+1]}" == "${spec_basename}" && "${spec_args[i+2]}" == "off" ]]; then
-                    disable_valg_for_this_spec=true
-                    break
+                if [[ "${spec_args[i]}" == "-spec" ]]; then
+                    spec_name="${spec_args[i+1]}"
+                    spec_config="${spec_args[i+2]}"
+                    if [[ "$spec_name" == "$spec_basename" && "$spec_config" == "off" ]]; then
+                        disable_valg_for_this_spec=true
+                        break
+                    fi
                 fi
             done
             if [[ "$disable_valg_for_this_spec" == false ]]; then
                 spec_flag="-valg"
             fi
+            echo "Flags for javamop [${spec_basename}]: ${javamop_flag} ${spec_flag}"
         fi
-        echo "Flags for javamop [${spec_basename}]: ${javamop_flag} ${spec_flag}"
         javamop -baseaspect ${props_dir}/BaseAspect.aj -emop "${spec}" ${javamop_flag} ${spec_flag}
     done
 
     rm -rf ${props_dir}/classes/mop; mkdir -p ${props_dir}/classes/mop
     
-    echo "Flags for rv-monitor: ${rv_monitor_flag}"
-    rv-monitor -merge -d ${props_dir}/classes/mop/ ${props_dir}/*.rvm ${rv_monitor_flag}
+    echo "Flags for rv-monitor: ${rv_monitor_flag[@]}"
+    rv-monitor -merge -d "${props_dir}/classes/mop/" ${props_dir}/*.rvm "${rv_monitor_flag[@]}"
 
     javac ${props_dir}/classes/mop/*.java
     if [ "${mode}" == "verbose" ]; then

@@ -24,15 +24,15 @@ public class LockManager {
         // }
 
     	for (RVMonitorSpec spec: specs) {
-	    lockMap.put(spec.getName(), new GlobalLock(new RVMVariable(name + "_RVMLock" + "_" + spec.getName())));
-	}
+    	    lockMap.put(spec.getName(), new GlobalLock(new RVMVariable(name + "_RVMLock" + "_" + spec.getName())));
+    	}
     }
 
     /*
      * public GlobalLock getLock(RVMonitorSpec spec){ return locks.get(spec); }
      */
     public GlobalLock getLock(String name) {
-	return lockMap.get(name);
+    	return lockMap.get(name);
     }
 
     public String decl() {
@@ -45,13 +45,14 @@ public class LockManager {
          * ret += "// Declarations for Locks \n"; for (GlobalLock lock :
          * locks.values()) { ret += lock; } ret += "\n";
          */
+        /*
         ret += "// Declarations for the Lock \n";
-	for(Map.Entry<String, GlobalLock> entry : lockMap.entrySet()) {
-	    GlobalLock lock = entry.getValue();
+    	for(Map.Entry<String, GlobalLock> entry : lockMap.entrySet()) {
+    	    GlobalLock lock = entry.getValue();
             ret += lock;
-	}
+    	}
         ret += "\n";
-
+        */ 
         return ret;
     }
 
