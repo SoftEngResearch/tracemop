@@ -6,13 +6,10 @@ public class SpecConfigConverter implements IStringConverter<SpecConfig> {
     @Override
     public SpecConfig convert(String value) {
         SpecConfig config = new SpecConfig();
-
-        System.out.println("value: " + value);
         value = value.trim();
 
         int firstSpace = value.indexOf(' ');
         if (firstSpace == -1) {
-            System.out.println(value);
             throw new IllegalArgumentException("Invalid value for spec parameter");
         }
 

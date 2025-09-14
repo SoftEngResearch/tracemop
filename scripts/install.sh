@@ -41,6 +41,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ "$traj" == true && "$valg" != true ]]; then
+  echo "[install.sh] Error: -traj can only be used if -valg is enabled."
+  exit 1
+fi
+
 function install() {
   if [[ ${TRACK} == true ]]; then
     TRACK="track"

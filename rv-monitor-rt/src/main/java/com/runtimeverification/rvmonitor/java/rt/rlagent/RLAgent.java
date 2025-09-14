@@ -32,16 +32,22 @@ public class RLAgent {
 
     private boolean lastAction = true;
     private int lastTimestep = -1;
+    private double lastQc;
+    private double lastQn;
 
     public static class Step {
         public final boolean action;
         public final float reward;
         public final int timestep;
+        public final double Qc;
+        public final double Qn;
 
-        public Step(boolean action, double reward, int timestep) {
+        public Step(boolean action, double reward, int timestep, double Qc, double Qn) {
             this.action = action;
             this.reward = (float) reward;
             this.timestep = timestep;
+            this.Qc = Qc;
+            this.Qn = Qn;
         }
     }
 
@@ -85,6 +91,8 @@ public class RLAgent {
     	}
 
         int currentStep = timeStep - 1;
+        lastQc = Qc;
+        lastQn = Qn;
 
         // Reward Update 
     	if (monitor != null) {
@@ -113,7 +121,7 @@ public class RLAgent {
     	}
 
         if (traj && !converged && lastTimestep >= 0) {
-            trajectory.add(new Step(lastAction, reward, lastTimestep));
+            trajectory.add(new Step(lastAction, reward, lastTimestep, lastQc, lastQn));
         }
 
         checkConverged();
@@ -147,13 +155,17 @@ public class RLAgent {
               .append(step.timestep)
               .append(": ")
               .append(actionStr)
-              .append(", ")
+              .append(", reward=")
               .append(String.format("%.4f", step.reward))
+              .append(", Qc=")
+              .append(String.format("%.4f", step.Qc))
+              .append(", Qn=")
+              .append(String.format("%.4f", step.Qn))
               .append("> ");
         }
 
         if (converged) {
-            sb.append("!converged");
+            sb.append("[converged]");
         }
 
         return sb.toString().trim();
