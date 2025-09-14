@@ -148,7 +148,7 @@ public class RLAgent {
               .append(": ")
               .append(actionStr)
               .append(", ")
-              .append(String.format("%.2f", step.reward))
+              .append(String.format("%.4f", step.reward))
               .append("> ");
         }
 

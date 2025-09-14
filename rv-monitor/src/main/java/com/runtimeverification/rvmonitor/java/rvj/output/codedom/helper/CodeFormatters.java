@@ -56,7 +56,7 @@ class JavaCodeFormatter implements ICodeFormatter {
     public String getCode() {
         StringBuilder s = new StringBuilder();
         for (String l : this.lines) {
-            s.append(l);
+            s.append(l.replaceAll("RLAgentStore\\s+\\.add", "RLAgentStore.add"));
             s.append('\n');
         }
         if (this.line.length() > 0)

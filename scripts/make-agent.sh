@@ -30,6 +30,13 @@ violation_from_ajc=$9
 valg=${10}
 shift 10
 
+traj="false"
+
+if [[ "$#" -gt 0 && ( "${!#}" == "true" || "${!#}" == "false" ) ]]; then
+  traj="${!#}"
+  set -- "${@:1:$(($#-1))}"
+fi
+
 spec_args=()
 while [[ $# -gt 0 ]]; do
     if [[ "$1" == "-spec" ]]; then
@@ -76,6 +83,9 @@ function build_agent() {
 
     rv_monitor_flag+=("${spec_args[@]}")
 
+    if [[ "$traj" == "true" ]]; then
+        rv_monitor_flag+=("-traj")
+    fi
     cp ${SCRIPT_DIR}/BaseAspect_new.aj ${props_dir}/BaseAspect.aj
     
     if [[ "${valg}" != "true" ]]; then

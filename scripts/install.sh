@@ -6,6 +6,14 @@ TRACK=${1:-false}
 STATS=${2:-false}
 
 shift 2
+
+traj=false
+
+if [[ "${!#}" == "-traj" ]]; then
+  traj=true
+  set -- "${@:1:$(($#-1))}"
+fi
+
 valg=false
 spec_configs=()
 
@@ -65,8 +73,8 @@ function install() {
     props="props-track"
   fi
 
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${valg} "${spec_configs[@]}" 
-  
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${valg} "${spec_configs[@]}" ${traj}
+
   if [[ ${TRACK} == "track" ]]; then
     # Add aspect
     pushd resources &> /dev/null

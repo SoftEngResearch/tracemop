@@ -1125,19 +1125,35 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             CodeVariable agentsMap = new CodeVariable(new CodeType("HashMap<Integer, RLAgent>"), 
 			    			      this.rvmSpec.getName() + "_agents");
 
-            SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
-    	    putAgentStmt.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
-			    		      new CodeVarRefExpr(agentsMap), 
-    					      "put",
-    					      new CodeVarRefExpr(threadLoc),
-			    		      CodeExpr.fromLegacy(new CodeType("RLAgent"), "new RLAgent(" + this.rvmSpec.getName() + "_traces, " 
-						      							  + config.alpha + ", " 
-						      							  + config.epsilon + ", " 
-						      							  + config.threshold + ", " 
-						      							  + config.initc + ", " 
-    													  + config.initn + ")"))));
+    	    CodeStmtCollection agentPutAdd = new CodeStmtCollection();
 
-    	    stmts.add(new CodeConditionStmt(notContainsKey, putAgentStmt));
+            SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
+            CodeVariable newAgent = new CodeVariable(new CodeType("RLAgent"), "newAgent"); 
+            String trajArg = Main.options.traj ? ", true" : "";
+            CodeExpr newAgentExpr = CodeExpr.fromLegacy(new CodeType("RLAgent"), "new RLAgent(" + this.rvmSpec.getName() + "_traces, " 
+                                                        + config.alpha + ", " 
+						      							+ config.epsilon + ", " 
+						      							+ config.threshold + ", " 
+						      							+ config.initc + ", " 
+                                                        + config.initn
+                                                        + trajArg + ")");
+
+            agentPutAdd.add(new CodeVarDeclStmt(newAgent, newAgentExpr));
+    	    agentPutAdd.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
+			    		    new CodeVarRefExpr(agentsMap), 
+    					    "put",
+    					    new CodeVarRefExpr(threadLoc),
+    					    new CodeVarRefExpr(newAgent))));
+
+            if (Main.options.traj) {
+        	    agentPutAdd.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
+    			    		    CodeExpr.fromLegacy(CodeType.klass(), "RLAgentStore"), 
+        					    "add",
+                                CodeExpr.fromLegacy(CodeType.string(), "\"" + this.rvmSpec.getName() + "\""),
+    			    		    CodeExpr.fromLegacy(CodeType.object(), "joinpoint.getSourceLocation()"), 
+        					    new CodeVarRefExpr(newAgent))));
+            }
+    	    stmts.add(new CodeConditionStmt(notContainsKey, agentPutAdd));
 
     	    CodeExpr getAgentExpr = CodeExpr.fromLegacy(CodeType.object(),
                             	    this.rvmSpec.getName() + "_agents.get(threadLoc)");         
