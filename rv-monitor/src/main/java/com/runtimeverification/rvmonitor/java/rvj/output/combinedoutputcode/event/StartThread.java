@@ -27,7 +27,7 @@ public class StartThread {
                     "StartThread should be defined only for an startThread pointcut.");
 
         this.event = event;
-	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
+    	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
         this.runnableMap = new RVMVariable(rvmSpec.getName() + "_"
                 + event.getId() + "_ThreadToRunnable");
         this.mainThread = new RVMVariable(rvmSpec.getName() + "_"

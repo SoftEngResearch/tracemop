@@ -31,7 +31,7 @@ public class EndThread {
 
         this.event = event;
         this.monitorClass = combinedOutput.monitors.get(rvmSpec);
-	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
+    	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
 
         this.runnableMap = new RVMVariable(rvmSpec.getName() + "_"
                 + event.getId() + "_ThreadToRunnable");

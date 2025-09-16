@@ -50,7 +50,7 @@ public class RVMOutputCode {
 
         // Set monitor lock for each monitor set
         for (MonitorSet monitorSet : monitorSets.values()) {
-	    monitorSet.setMonitorLock(output.getName() + "." + output.lockManager.getLock(monitorSet.getRVMSpecName()).getName());
+    	    monitorSet.setMonitorLock(output.getName() + "." + output.lockManager.getLock(monitorSet.getRVMSpecName()).getName());
             monitorSet.setIndexingTreeManager(output.indexingTreeManager);
         }
 
