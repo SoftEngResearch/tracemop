@@ -35,7 +35,7 @@ ListIterator_Set(ListIterator i) {
 	event set before(ListIterator i) :
 		call(* ListIterator+.set(..)) && target(i) {}
 
-	ere : create add* ((next | previous)+ set* (remove | add+ | epsilon))*
+    ere : create add* ((next | previous)+ set* (add | remove)*)*
 
 	@fail {
 		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
