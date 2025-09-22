@@ -153,14 +153,14 @@ public class RLAgent {
             String actionStr = step.action ? "create" : "ncreate";
             sb.append("<")
               .append(step.timestep)
-              .append(": ")
+              .append(": A=")
               .append(actionStr)
-              .append(", reward=")
-              .append(String.format("%.4f", step.reward))
+              .append(", R=")
+              .append(String.format("%.2f", step.reward))
               .append(", Qc=")
-              .append(String.format("%.4f", step.Qc))
+              .append(String.format("%.2f", step.Qc))
               .append(", Qn=")
-              .append(String.format("%.4f", step.Qn))
+              .append(String.format("%.2f", step.Qn))
               .append("> ");
         }
 
