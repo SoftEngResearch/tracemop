@@ -86,7 +86,7 @@ public class HandlerMethod {
 
         ret += methodName + " (";
         if (Main.options.locationFromAjc) {
-            ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint";
+            ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint";
         }
 
         if (!Main.options.stripUnusedParameterInMonitor)

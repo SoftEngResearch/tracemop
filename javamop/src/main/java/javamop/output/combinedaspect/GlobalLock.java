@@ -32,10 +32,15 @@ public class GlobalLock {
     public String toString() {
         String ret = "";
         
-        ret += "static ReentrantLock " + lock + " = new ReentrantLock();\n";
-        ret += "static Condition " + lock + "_cond = " + lock + ".newCondition();\n";
-        
+        ret += "static ReentrantLock " + lock + " = new ReentrantLock();\n";   
         return ret;
     }
-    
+
+    public String getAcquireCode() {
+        return this.getName() + ".lock();\n";
+    }
+
+    public String getReleaseCode() {
+        return this.getName() + ".unlock();\n";
+    }
 }

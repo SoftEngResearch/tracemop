@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
+import com.runtimeverification.rvmonitor.java.rvj.SpecConfig;
 import com.runtimeverification.rvmonitor.java.rvj.output.OptimizedCoenableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCode;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCodeNoNewLine;
@@ -372,7 +373,7 @@ public class BaseMonitor extends Monitor {
         // user's action code.
         {
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint, ";
+                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, ";
             }
             RVMParameters params;
             if (Main.options.stripUnusedParameterInMonitor)
@@ -406,7 +407,7 @@ public class BaseMonitor extends Monitor {
             // Receive new event, notify traceDB
             ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().add(specName + \"#\" + this.monitorid, \"";
             if (Main.options.trackEventLocations) {
-                ret += event.getId() + "\" + \"~\" + TraceUtil.getShortLocation(joinpoint, enclosingJoinpoint)";
+                ret += event.getId() + "\" + \"~\" + TraceUtil.getShortLocation(joinpoint)";
             } else {
                 ret += event.getId() + "\"";
             }
@@ -463,6 +464,14 @@ public class BaseMonitor extends Monitor {
 
         ret += aftereventMonitoringCode;
 
+        if (Main.options.valg) {
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+                ret += "if (recordEvents) {\n";
+            	ret += "traceVal += (System.identityHashCode(joinpoint.getSourceLocation()) + random.nextInt());\n";
+            	ret += "}\n";
+            }
+        }
         if (retbool)
             ret += "return true;\n";
         ret += "}\n";
@@ -509,7 +518,7 @@ public class BaseMonitor extends Monitor {
                         + propMonitor.eventMethods.get(event.getId()) + "(";
                 {
                     if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                        ret += "joinpoint, enclosingJoinpoint, ";
+                        ret += "joinpoint, ";
                     }
                     RVMParameters passing;
                     if (Main.options.stripUnusedParameterInMonitor)
@@ -632,7 +641,7 @@ public class BaseMonitor extends Monitor {
             ret += "if(" + monitorVar + "." + rvmVariable + ") {\n";
             ret += monitorVar + "." + handlerMethod.getMethodName() + "(";
             if (Main.options.locationFromAjc) {
-                ret += "joinpoint, enclosingJoinpoint, ";
+                ret += "joinpoint, ";
             }
             if (!Main.options.stripUnusedParameterInMonitor)
                 ret += event.getRVMParametersOnSpec().parameterStringIn(
@@ -732,7 +741,7 @@ public class BaseMonitor extends Monitor {
             if (Main.options.internalBehaviorObserving) {
                 ret += "private int holderid;\n";
                 ret += "private static java.util.concurrent.atomic.AtomicInteger nextid = new java.util.concurrent.atomic.AtomicInteger(0);\n";
-                ret += "private static String specName = \"" + monitorName + "\";\n";
+                ret += "public static String specName = \"" + monitorName + "\";\n";
 
                 ret += "@Override\n";
                 ret += "public final String getObservableObjectDescription() {\n";
@@ -843,6 +852,7 @@ public class BaseMonitor extends Monitor {
                         + " = false;\n";
             }
         }
+    	ret += "Random random = new Random(1);\n";
         ret += "\n";
 
         if (this.isAtomicMonitorUsed()) {
@@ -1087,7 +1097,7 @@ public class BaseMonitor extends Monitor {
 //            ret += "private int monitorid;\n";
 //            ret += "public int getMonitorID(){ return this.monitorid; };\n";
             ret += "private static java.util.concurrent.atomic.AtomicInteger nextid = new java.util.concurrent.atomic.AtomicInteger(0);\n";
-            ret += "private static String specName = \"" + monitorName + "\";\n";
+            ret += "public static String specName = \"" + monitorName + "\";\n";
 
             ret += "\n";
             ret += "@Override\n";

@@ -7,7 +7,12 @@ import java.util.List;
 
 public abstract class AbstractMonitor implements IMonitor, RVMObject {
 	public int monitorid = -123;
-//	public List<String> trace = new ArrayList<>();
+
+	public String location = null;
+	private boolean activated = true;
+
+	public int traceVal = 0;
+	public boolean recordEvents = true;
 
 	/**
 	 * Terminates this monitor instance. The actual code depends on the specification and,
@@ -15,6 +20,18 @@ public abstract class AbstractMonitor implements IMonitor, RVMObject {
 	 * @param treeid
 	 */
 	protected abstract void terminateInternal(int treeid);
+
+	public void activate() {
+	    this.activated = true;
+	}
+
+	public void deactivate() {
+	    this.activated = false;
+	}
+
+	public boolean isActivated() {
+	    return activated;
+	}
 
 	@Override
 	public String toString() {

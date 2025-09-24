@@ -11,9 +11,9 @@ import javamop.parser.ast.MOPSpecFile;
  */
 public class Imports {
     private final ArrayList<String> imports;
-    private final String[] required = {"java.util.concurrent.*", "java.util.concurrent.locks.*", 
-        "java.util.*", "javamoprt.*", "java.lang.ref.*", "org.aspectj.lang.*" };
-    
+    private final String[] required = {"java.util.concurrent.*", "java.util.concurrent.locks.*",
+        "java.util.*", "javamoprt.*", "java.lang.ref.*", "org.aspectj.lang.*", "java.lang.Thread"};
+
     /**
      * Extract the imports from a specification file.
      * @param mopSpecFile The specification to pull the imports from.

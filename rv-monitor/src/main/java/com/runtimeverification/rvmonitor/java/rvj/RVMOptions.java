@@ -6,6 +6,8 @@ import javamop.JavaMOPOptions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class RVMOptions {
     // Any stand-alone command line argument which is not required for a '-x' option
@@ -116,6 +118,15 @@ public class RVMOptions {
             description = "File containing database configurations to use for capturing traces",
             converter = JavaMOPOptions.FileConverter.class)
     public File dbConfigFile = new File(System.getProperty("user.home"), ".trace-db.config");
+    
+    @Parameter(names={"-valg"},description = "Enable Valg")
+    public boolean valg;
+
+    @Parameter(names = {"-traj"}, description = "Enable trajectory saving for Valg agents")
+    public boolean traj = false;
+
+    @Parameter(names = "-spec", description = "Hyperparameters for spec(s)", converter = SpecConfigConverter.class, splitter = NoSplitter.class)
+    public List<SpecConfig> specConfigs = new ArrayList<>();
 
     public boolean isJarFile;
 
@@ -128,5 +139,7 @@ public class RVMOptions {
     public boolean stripUnusedParameterInMonitor = true;
 
     public boolean eliminatePresumablyRemnantCode;
+
+    public Map<String, SpecConfig> specConfigMap = new HashMap<>();
 
 }

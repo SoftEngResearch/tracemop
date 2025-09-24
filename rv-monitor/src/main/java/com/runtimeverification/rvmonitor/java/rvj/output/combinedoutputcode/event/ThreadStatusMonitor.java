@@ -30,7 +30,7 @@ public class ThreadStatusMonitor extends EndThread {
                 + "_MainThread");
         this.threadSet = new RVMVariable(rvmSpec.getName() + "_" + eventName
                 + "_ThreadSet");
-        this.globalLock = combinedOutput.lockManager.getLock();
+    	this.globalLock = combinedOutput.lockManager.getLock(rvmSpec.getName());
 
         List<PropertyAndHandlers> props = rvmSpec.getPropertiesAndHandlers();
         for (PropertyAndHandlers p : props) {

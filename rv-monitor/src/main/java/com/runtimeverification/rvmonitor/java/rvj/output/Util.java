@@ -6,12 +6,7 @@ import com.runtimeverification.rvmonitor.java.rvj.parser.ast.PackageDeclaration;
 public class Util {
 
     public static String getDefaultLocation() {
-        if (Main.options.locationFromAjc) {
-            return  "com.runtimeverification.rvmonitor.java.rt.ViolationRecorder.getLineOfCode("
-                    + "joinpoint)";
-        } else {
-            return  "com.runtimeverification.rvmonitor.java.rt.ViolationRecorder.getLineOfCode()";
-        }
+        return "joinpoint.getSourceLocation().getWithinType().getName() + \"@\" + joinpoint.getSourceLocation().toString()";
     }
 
     public static String packageAndNameToUrl(

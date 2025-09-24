@@ -1,6 +1,8 @@
 package com.runtimeverification.rvmonitor.java.rvj.output.combinedoutputcode;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
 import com.runtimeverification.rvmonitor.java.rvj.parser.ast.rvmspec.RVMonitorSpec;
@@ -11,7 +13,7 @@ public class LockManager {
     // HashMap<RVMonitorSpec, GlobalLock> locks = new HashMap<RVMonitorSpec,
     // GlobalLock>();
 
-    private final GlobalLock lock;
+    private final HashMap<String, GlobalLock> lockMap = new HashMap<String, GlobalLock>();
 
     public LockManager(String name, List<RVMonitorSpec> specs)
             throws RVMException {
@@ -21,14 +23,16 @@ public class LockManager {
         // "_RVMLock")));
         // }
 
-        lock = new GlobalLock(new RVMVariable(name + "_RVMLock"));
+    	for (RVMonitorSpec spec: specs) {
+    	    lockMap.put(spec.getName(), new GlobalLock(new RVMVariable(name + "_RVMLock" + "_" + spec.getName())));
+    	}
     }
 
     /*
      * public GlobalLock getLock(RVMonitorSpec spec){ return locks.get(spec); }
      */
-    public GlobalLock getLock() {
-        return lock;
+    public GlobalLock getLock(String name) {
+    	return lockMap.get(name);
     }
 
     public String decl() {
@@ -41,10 +45,14 @@ public class LockManager {
          * ret += "// Declarations for Locks \n"; for (GlobalLock lock :
          * locks.values()) { ret += lock; } ret += "\n";
          */
+        /*
         ret += "// Declarations for the Lock \n";
-        ret += lock;
+    	for(Map.Entry<String, GlobalLock> entry : lockMap.entrySet()) {
+    	    GlobalLock lock = entry.getValue();
+            ret += lock;
+    	}
         ret += "\n";
-
+        */ 
         return ret;
     }
 

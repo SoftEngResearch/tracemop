@@ -5,6 +5,47 @@ SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 TRACK=${1:-false}
 STATS=${2:-false}
 
+shift 2
+
+traj=false
+
+if [[ "${!#}" == "-traj" ]]; then
+  traj=true
+  set -- "${@:1:$(($#-1))}"
+fi
+
+valg=false
+spec_configs=()
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -valg)
+      valg=true
+      shift 1
+      ;;
+    -spec)
+      if [[ $# -lt 3 ]]; then
+        echo "[install.sh] Missing argument for -spec"
+        exit 1
+      fi
+      spec_name="$2"
+      spec_value="$3"
+      spec_configs+=("-spec" "$spec_name" "$spec_value")
+      shift 3
+      ;;
+    *)
+      echo "[install.sh] Unknown option $1"
+      shift
+      ;;
+  esac
+done
+
+if [[ "$traj" == true && "$valg" != true ]]; then
+  echo "[install.sh] Error: -traj can only be used if -valg is enabled."
+  exit 1
+fi
+
 function install() {
   if [[ ${TRACK} == true ]]; then
     TRACK="track"
@@ -37,8 +78,8 @@ function install() {
     props="props-track"
   fi
 
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true
-  
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${valg} "${spec_configs[@]}" ${traj}
+
   if [[ ${TRACK} == "track" ]]; then
     # Add aspect
     pushd resources &> /dev/null

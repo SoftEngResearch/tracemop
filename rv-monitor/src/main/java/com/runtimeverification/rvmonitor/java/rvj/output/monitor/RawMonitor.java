@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
+import com.runtimeverification.rvmonitor.java.rvj.SpecConfig;
 import com.runtimeverification.rvmonitor.java.rvj.output.OptimizedCoenableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCode;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
@@ -108,6 +109,19 @@ public class RawMonitor extends Monitor {
             eventActionStr = eventActionStr.replaceAll("__SKIP",
                     BaseMonitor.skipEvent + " = true");
 
+            if (Main.options.valg) { 
+                SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+                if (config != null && !config.disabled) {
+            	    int idx = eventActionStr.indexOf("has been violated on line");
+            	    while (idx > 0) {
+                		idx = eventActionStr.indexOf("}", idx);
+                		eventActionStr = eventActionStr.substring(0, idx) +
+                		"violated = true;\n" +
+                		eventActionStr.substring(idx);
+                		idx = eventActionStr.indexOf("has been violated on line", idx);
+            	    }
+                }
+            }
             eventAction = new RVMJavaCode(eventActionStr);
         }
 
@@ -117,7 +131,7 @@ public class RawMonitor extends Monitor {
                 + event.getId() + "(";
         {
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, org.aspectj.lang.JoinPoint.StaticPart enclosingJoinpoint, ";
+                ret += "org.aspectj.lang.JoinPoint.StaticPart joinpoint, ";
             }
             RVMParameters params;
             if (Main.options.stripUnusedParameterInMonitor)
@@ -137,7 +151,7 @@ public class RawMonitor extends Monitor {
             // Receive new event, notify traceDB
             ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().addRaw(specName + \"#\" + this.monitorid, \"";
             if (Main.options.trackEventLocations) {
-                ret += event.getId() + "\" + \"~\" + TraceUtil.getShortLocation(joinpoint, enclosingJoinpoint)";
+                ret += event.getId() + "\" + \"~\" + TraceUtil.getShortLocation(joinpoint)";
             } else {
                 ret += event.getId() + "\"";
             }
@@ -183,7 +197,7 @@ public class RawMonitor extends Monitor {
         ret += monitorVar + ".event_" + event.getId() + "(";
         {
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
-                ret += "joinpoint, enclosingJoinpoint, ";
+                ret += "joinpoint, ";
             }
 
             RVMParameters params;
@@ -256,7 +270,7 @@ public class RawMonitor extends Monitor {
 //            ret += "private int monitorid;\n";
 //            ret += "public int getMonitorID(){ return this.monitorid; };\n";
             ret += "private static java.util.concurrent.atomic.AtomicInteger nextid = new java.util.concurrent.atomic.AtomicInteger(0);\n";
-            ret += "private static String specName = \"" + this.monitorName + "\";\n";
+            ret += "public static String specName = \"" + this.monitorName + "\";\n";
 
             ret += "\n";
             ret += "@Override\n";
@@ -290,7 +304,12 @@ public class RawMonitor extends Monitor {
         if (Main.options.statistics) {
             ret += stat.fieldDecl() + "\n";
         }
-
+        if (Main.options.valg) { 
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+            	ret += "public boolean violated;\n";
+            }
+        }
         //constructor
         ret += monitorName + "(){\n";
         if (Main.options.statistics) {

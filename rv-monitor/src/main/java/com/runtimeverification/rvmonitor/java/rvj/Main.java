@@ -9,6 +9,7 @@ package com.runtimeverification.rvmonitor.java.rvj;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.List;
 import java.util.ArrayList;
 
 import com.beust.jcommander.JCommander;
@@ -17,6 +18,7 @@ import com.runtimeverification.rvmonitor.java.rt.util.TraceUtil;
 import com.runtimeverification.rvmonitor.java.rvj.logicclient.LogicRepositoryConnector;
 import com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption;
 import com.runtimeverification.rvmonitor.java.rvj.parser.ast.RVMSpecFile;
+import com.runtimeverification.rvmonitor.java.rvj.parser.ast.rvmspec.RVMonitorSpec;
 import com.runtimeverification.rvmonitor.util.RVMException;
 import com.runtimeverification.rvmonitor.util.Tool;
 
@@ -135,6 +137,23 @@ public class Main {
         }
         RVMSpecFile combinedSpec = SpecCombiner.process(specs);
 
+    	java.util.Set<String> specNames = new java.util.HashSet<>();
+    	for (RVMonitorSpec spec : combinedSpec.getSpecs()) {
+    	    specNames.add(spec.getName());
+    	}
+
+        java.util.Set<String> configuredNames = options.specConfigMap.keySet();
+
+    	for (String specName : specNames) {
+    	    if (!configuredNames.contains(specName)) {
+    	        SpecConfig defaultConfig = new SpecConfig();
+    		defaultConfig.name = specName;
+    		defaultConfig.disabled = false;
+    		options.specConfigs.add(defaultConfig);
+            options.specConfigMap.put(specName, defaultConfig);
+    	    }
+    	}
+
         RVMProcessor processor = new RVMProcessor(outputName);
         String output = processor.process(combinedSpec);
 
@@ -250,12 +269,28 @@ public class Main {
      *            The command-line arguments.
      */
     public static void main(String[] args) {
+        List<String> fixedArgs = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            if ("-spec".equals(args[i])) {
+                fixedArgs.add("-spec");
+                fixedArgs.add(args[i + 1] + " " + args[i + 2]);
+                i += 2; 
+            } else {
+                fixedArgs.add(args[i]);
+            }
+        }      
+        String[] fixedArgsArray = fixedArgs.toArray(new String[0]);
+        
         options = new RVMOptions();
-        JCommander jc = initializeJCommander(args);
+        JCommander jc = initializeJCommander(fixedArgsArray);
         if (jc == null) return;
 
-        handleOptions(args, jc);
+        handleOptions(fixedArgsArray, jc);
 
+        for (SpecConfig config : options.specConfigs) {
+            options.specConfigMap.put(config.name, config);
+        }
+    
         CodeGenerationOption.initialize();
 
         try {

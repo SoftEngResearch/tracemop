@@ -35,7 +35,7 @@ ListIterator_Set(ListIterator i) {
 	event e128 before(ListIterator i) :
 		call(* ListIterator+.set(..)) && target(i) {}
 
-	ere : e124 e123* ((e125 | e126)+ e128* (e127 | e123+ | epsilon))*
+    ere : e124 e123* ((e125 | e126)+ e128* (e123 | e127)*)*    
 
 	@fail {
 		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);

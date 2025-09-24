@@ -95,7 +95,7 @@ public class EndProgram {
             ret += EventManager.EventMethodHelper.methodName(eventBody.getMOPSpec(), eventBody.event,
                 eventBody.fileName);
             if (JavaMOPMain.options.internalBehaviorObserving || JavaMOPMain.options.locationFromAjc) {
-                ret += "(null, null);\n";
+        		ret += "(null);\n";
             } else {
                 ret += "();\n";
             }
