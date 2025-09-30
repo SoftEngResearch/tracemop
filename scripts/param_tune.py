@@ -22,7 +22,7 @@ def parse_trajectories_file(file_path, spec_name):
             if "@" in line:
                 current_spec = line.split("@")[0].strip()
             elif line.startswith("=>") and current_spec == spec_name:
-                steps = re.findall(r"<(\d+):\s*(create|ncreate),\s*reward=([\d\.]+)", line)
+                steps = re.findall(r"<(\d+):\s*A=(create|ncreate),\s*R=([\d\.]+),", line)
                 trace = [(int(t), int(float(r))) for t, a, r in steps if a == "create"]
                 if trace:
                     traces.append(trace)
