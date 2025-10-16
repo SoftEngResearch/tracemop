@@ -4,12 +4,22 @@ import math
 import optuna
 import random
 import sys
-from collections import defaultdict
+import json
+import logging
+logging.getLogger("optuna").setLevel(logging.WARNING)
 
 DECAY_RATE = 0.1
 DEFAULT_THRESHOLD = 0.0001
 DEFAULT_QC = 5.0
 DEFAULT_QN = 0.0
+
+def parse_all_specs(file_path):
+    specs = set()
+    with open(file_path, "r") as f:
+        for line in f:
+            if "@" in line:
+                specs.add(line.split("@")[0].strip())
+    return sorted(specs)
 
 def parse_trajectories_file(file_path, spec_name):
     traces = []
@@ -62,47 +72,52 @@ def simulate_trace(trace, alpha, epsilon):
         if action:
             num_tot += 1
             reward = 1.0 if true_action == 1 else 0.0
-            if true_action == 0: num_dup += 1
+            if true_action == 0:
+                num_dup += 1
             Qc += alpha * (reward - Qc)
         else:
             reward = (num_dup / num_tot) if num_tot > 0 else 0.0
             Qn += alpha * (reward - Qn)
-        # total_reward += reward
         if abs(1.0 - abs(Qc - Qn)) < DEFAULT_THRESHOLD:
             converged = True
     return num_tot - num_dup
-    # return total_reward
 
 def make_objective(spec, traces):
     def objective(trial):
         alpha = round(trial.suggest_float("alpha", 0.01, 0.99, step=0.01), 2)
         epsilon = round(trial.suggest_float("epsilon", 0.01, 0.99, step=0.01), 2)
         total = sum(simulate_trace(trace, alpha, epsilon) for trace in traces)
-        avg_reward = total / len(traces)
-        print(f"[{spec}] Trial {trial.number}: alpha={alpha:.2f}, epsilon={epsilon:.2f}, reward={avg_reward:.5f}")
-        return avg_reward
+        return total
     return objective
 
+def tune_all_specs(traj_file, n_trials):
+    specs = parse_all_specs(traj_file)
+    results = {}
+    for spec in specs:
+        partial_traces = parse_trajectories_file(traj_file, spec)
+        if not partial_traces:
+            continue
+        traces = [fill_missing(trace) for trace in partial_traces]
+        study = optuna.create_study(direction="maximize")
+        study.optimize(make_objective(spec, traces), n_trials=n_trials, show_progress_bar=False)
+        best = {
+            "alpha": round(study.best_params["alpha"], 2),
+            "epsilon": round(study.best_params["epsilon"], 2),
+            "threshold": DEFAULT_THRESHOLD,
+            "Qc_init": DEFAULT_QC,
+            "Qn_init": DEFAULT_QN,
+        }
+        results[spec] = best
+        print(f"[{spec}] Optimal: alpha={best['alpha']}, epsilon={best['epsilon']}, "
+              f"threshold={best['threshold']}, Qc_init={best['Qc_init']}, Qn_init={best['Qn_init']}")
+    return results
+
 def main():
-    if len(sys.argv) != 4:
-        print("Usage: python script.py <trajectories_file> <spec_name> <n_trials>")
-        sys.exit(1)
-    traj_file, spec_name, n_trials = sys.argv[1], sys.argv[2], int(sys.argv[3])
-    partial_traces = parse_trajectories_file(traj_file, spec_name)
-    if not partial_traces:
-        print(f"No traces found for spec '{spec_name}' in {traj_file}")
-        sys.exit(1)
-    traces = [fill_missing(trace) for trace in partial_traces]
-    study = optuna.create_study(direction="maximize")
-    study.optimize(make_objective(spec_name, traces), n_trials=n_trials, show_progress_bar=False)
-    print(
-        f"\nFinal optimal hyperparameters for '{spec_name}': "
-        f"alpha={study.best_params['alpha']:.2f}, "
-        f"epsilon={study.best_params['epsilon']:.2f}, "
-        f"threshold={DEFAULT_THRESHOLD:.4f}, "
-        f"Qc_init={DEFAULT_QC:.2f}, "
-        f"Qn_init={DEFAULT_QN:.2f}"
-    )
+    if len(sys.argv) != 3:
+        sys.exit("Usage: python param_tune.py <trajectories_file> <n_trials>")
+    traj_file, n_trials = sys.argv[1], int(sys.argv[2])
+    results = tune_all_specs(traj_file, n_trials)
+    print(json.dumps(results))
 
 if __name__ == "__main__":
     main()
