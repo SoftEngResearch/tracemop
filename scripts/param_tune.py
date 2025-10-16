@@ -54,7 +54,7 @@ def decide_action(Qc, Qn, alpha, epsilon, time_step):
 
 def simulate_trace(trace, alpha, epsilon):
     Qc, Qn = DEFAULT_QC, DEFAULT_QN
-    total_reward, num_tot, num_dup, converged = 0.0, 0, 0, False
+    num_tot, num_dup, converged = 0, 0, False
     for t, true_action in enumerate(trace):
         if converged:
             continue
@@ -67,10 +67,11 @@ def simulate_trace(trace, alpha, epsilon):
         else:
             reward = (num_dup / num_tot) if num_tot > 0 else 0.0
             Qn += alpha * (reward - Qn)
-        total_reward += reward
+        # total_reward += reward
         if abs(1.0 - abs(Qc - Qn)) < DEFAULT_THRESHOLD:
             converged = True
-    return total_reward
+    return num_tot - num_dup
+    # return total_reward
 
 def make_objective(spec, traces):
     def objective(trial):

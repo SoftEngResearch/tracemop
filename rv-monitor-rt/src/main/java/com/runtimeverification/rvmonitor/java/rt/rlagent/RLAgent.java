@@ -52,9 +52,9 @@ public class RLAgent {
     }
 
     public RLAgent(HashSet<Integer> uniqueTraces,
-        double alpha, double epsilon, double threshold, double initc, double initn) {
-        this(uniqueTraces, alpha, epsilon, threshold, initc, initn, false);
-    }
+		double alpha, double epsilon, double threshold, double initc, double initn) {
+		this(uniqueTraces, alpha, epsilon, threshold, initc, initn, false);
+	}
 
     public RLAgent(HashSet<Integer> uniqueTraces,
         double alpha, double epsilon, double threshold, double initc, double initn, boolean traj) {
@@ -76,6 +76,36 @@ public class RLAgent {
             convStatus = (Qn < Qc);
         }
     }
+
+	public boolean createAction() {
+    	if (timeStep++ == 0) {
+            lastTimestep = 0;
+			return true;
+		}
+        int currentStep = timeStep - 1;
+        lastQc = Qc;
+        lastQn = Qn;
+
+    	if (monitor != null) {
+    	    numTotTraces++;
+    	    if (!uniqueTraces.contains(monitor.traceVal)) {
+     		    uniqueTraces.add(monitor.traceVal);
+    	        reward = 1.0;
+    	    } else {
+        		numDupTraces++;
+    	        reward = 0.0;
+    	    }
+    	    Qc = Qc + ALPHA * (reward - Qc);
+    	} else {
+    	    reward = (double)numDupTraces / numTotTraces;
+    	    Qn = Qn + ALPHA * (reward - Qn);
+        }
+		if (traj && lastTimestep >= 0) {
+            trajectory.add(new Step(true, reward, lastTimestep, lastQc, lastQn));
+		}
+        lastTimestep = currentStep;
+        return true;
+	}
 
     public boolean decideAction() { 
     	// Initial Action Selection 

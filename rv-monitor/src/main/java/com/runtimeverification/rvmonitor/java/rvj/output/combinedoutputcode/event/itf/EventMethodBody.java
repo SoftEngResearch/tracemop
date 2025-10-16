@@ -1129,7 +1129,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
 
             SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
             CodeVariable newAgent = new CodeVariable(new CodeType("RLAgent"), "newAgent"); 
-            String trajArg = Main.options.traj ? ", true" : "";
+			String trajArg = Main.options.traj ? ", true" : "";
             CodeExpr newAgentExpr = CodeExpr.fromLegacy(new CodeType("RLAgent"), "new RLAgent(" + this.rvmSpec.getName() + "_traces, " 
                                                         + config.alpha + ", " 
 						      							+ config.epsilon + ", " 
@@ -1160,10 +1160,11 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             CodeVariable rlAgent = new CodeVariable(new CodeType("RLAgent"), "rlAgent");
             stmts.add(new CodeVarDeclStmt(rlAgent, getAgentExpr));
 	    
-    	    CodeMethodInvokeExpr decideAction = new CodeMethodInvokeExpr(CodeType.bool(),
-			    		        new CodeVarRefExpr(rlAgent), 
-			    		        "decideAction");
-            CodeNegExpr negDecideAction = new CodeNegExpr(decideAction);
+			String methodName = Main.options.valgCreate ? "createAction" : "decideAction";
+			CodeMethodInvokeExpr decideActionExpr = new CodeMethodInvokeExpr(CodeType.bool(),
+						        new CodeVarRefExpr(rlAgent),
+						        methodName);
+			CodeNegExpr negDecideAction = new CodeNegExpr(decideActionExpr);
 
     	    CodeStmtCollection clearAndReturn = new CodeStmtCollection();
     	    clearAndReturn.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 

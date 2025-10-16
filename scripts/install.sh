@@ -15,6 +15,7 @@ if [[ "${!#}" == "-traj" ]]; then
 fi
 
 valg=false
+valg_create=false
 spec_configs=()
 
 while [[ $# -gt 0 ]]; do
@@ -22,6 +23,10 @@ while [[ $# -gt 0 ]]; do
   case $key in
     -valg)
       valg=true
+      shift 1
+      ;;
+    -valg-create)
+      valg_create=true
       shift 1
       ;;
     -spec)
@@ -41,8 +46,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ "$traj" == true && "$valg" != true ]]; then
-  echo "[install.sh] Error: -traj can only be used if -valg is enabled."
+if [[ "$traj" == true && "$valg" != true && "$valg_create" != true ]]; then
+  echo "[install.sh] Error: -traj can only be used if -valg or -valg-create is enabled."
   exit 1
 fi
 
@@ -78,7 +83,7 @@ function install() {
     props="props-track"
   fi
 
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${valg} "${spec_configs[@]}" ${traj}
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${valg} ${valg_create} "${spec_configs[@]}" ${traj}
 
   if [[ ${TRACK} == "track" ]]; then
     # Add aspect

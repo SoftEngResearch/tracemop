@@ -122,9 +122,12 @@ public class RVMOptions {
     @Parameter(names={"-valg"},description = "Enable Valg")
     public boolean valg;
 
+    @Parameter(names = {"-valg-create"}, description = "Enable Valg -- always create")
+    public boolean valgCreate = false;
+
     @Parameter(names = {"-traj"}, description = "Enable trajectory saving for Valg agents")
     public boolean traj = false;
-
+    
     @Parameter(names = "-spec", description = "Hyperparameters for spec(s)", converter = SpecConfigConverter.class, splitter = NoSplitter.class)
     public List<SpecConfig> specConfigs = new ArrayList<>();
 
