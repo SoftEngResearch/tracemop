@@ -103,64 +103,44 @@ public class Tool {
      *            : the string used in indentation, like "\t"
      * @return
      */
-    public static String changeIndentation(String content, String offset,
+    public static String changeIndentation(String content, String offset, 
             String prefix) {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         BufferedReader br = new BufferedReader(new StringReader(content));
         String aLine = "";
-        boolean emptyline = false;
+        boolean emptyLine = false;
         int lineNum = 0;
         try {
             for (aLine = br.readLine(); aLine != null; aLine = br.readLine()) {
                 lineNum++;
-                aLine = aLine.trim();
+                String trimmed = aLine.trim();
 
-                if (aLine.length() == 0) {
-                    if (emptyline)
-                        continue;
-                    emptyline = true;
-                    output.append("\n");
+                if (trimmed.isEmpty()) {
+                    if (!emptyLine) {
+                        output.append("\n");
+                        emptyLine = true;
+                    }
                     continue;
                 }
-                emptyline = false;
+                emptyLine = false;
+                String str = removeComments(trimmed).trim();
 
-                String str = removeComments(aLine).trim();
-
-                if (str.endsWith("}")) {
-                    String s = str.substring(0, str.length() - 1).trim();
-                    if (s.length() == 0) {
-                        offset = offset.substring(0,
-                                offset.length() - prefix.length());
+                if (str.endsWith("}") || str.startsWith("} else") || str.startsWith("}else")
+                        || str.startsWith("} catch") || str.startsWith("}catch")
+                        || str.startsWith("} finally") || str.startsWith("}finally")
+                        || str.startsWith("} while") || str.startsWith("}while")
+                        || str.endsWith("};") || str.endsWith("},")) {
+                    if (offset.length() >= prefix.length()) {
+                        offset = offset.substring(0, offset.length() - prefix.length());
                     }
-                } else if (str.startsWith("} else") || str.startsWith("}else")) {
-                    offset = offset.substring(0,
-                            offset.length() - prefix.length());
-                } else if (str.startsWith("} catch")
-                        || str.startsWith("}catch")) {
-                    offset = offset.substring(0,
-                            offset.length() - prefix.length());
-                } else if (str.startsWith("} finally")
-                        || str.startsWith("}finally")) {
-                    offset = offset.substring(0,
-                            offset.length() - prefix.length());
-                } else if (str.startsWith("} while")
-                        || str.startsWith("}while")) {
-                    offset = offset.substring(0,
-                            offset.length() - prefix.length());
-                } else if (str.endsWith("};")) {
-                    offset = offset.substring(0,
-                            offset.length() - prefix.length());
-                } else if (str.endsWith("},")) {
-                    offset = offset.substring(0,
-                            offset.length() - prefix.length());
                 }
-                aLine = offset + aLine;
-                output.append(aLine + "\n");
+                output.append(offset).append(aLine.trim()).append("\n");
                 str = removeComments(aLine).trim();
                 if (str.endsWith("{")) {
                     String s = str.substring(0, str.length() - 1).trim();
-                    if (!s.endsWith(",") && !s.endsWith("{"))
+                    if (!s.endsWith(",") && !s.endsWith("{")) {
                         offset += prefix;
+                    }
                 }
             }
         } catch (IndexOutOfBoundsException ie) {
