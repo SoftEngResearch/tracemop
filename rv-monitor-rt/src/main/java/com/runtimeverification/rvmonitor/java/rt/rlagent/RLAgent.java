@@ -52,18 +52,18 @@ public class RLAgent {
     }
 
     public RLAgent(HashSet<Integer> uniqueTraces,
-		double alpha, double epsilon, double threshold, double initc, double initn) {
-		this(uniqueTraces, alpha, epsilon, threshold, initc, initn, false);
+		double alpha, double epsilon, double threshold, double initC, double initN) {
+		this(uniqueTraces, alpha, epsilon, threshold, initC, initN, false);
 	}
 
     public RLAgent(HashSet<Integer> uniqueTraces,
-        double alpha, double epsilon, double threshold, double initc, double initn, boolean traj) {
+        double alpha, double epsilon, double threshold, double initC, double initN, boolean traj) {
         this.uniqueTraces = uniqueTraces;
         this.ALPHA = alpha;
         this.EPSILON = epsilon;
         this.THRESHOLD = threshold;
-        this.Qc = initc;
-        this.Qn = initn;
+        this.Qc = initC;
+        this.Qn = initN;
         this.traj = traj;
         if (traj) {
             this.trajectory = new ArrayList<>();
