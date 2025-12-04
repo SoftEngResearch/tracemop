@@ -109,7 +109,7 @@ public class RawMonitor extends Monitor {
             eventActionStr = eventActionStr.replaceAll("__SKIP",
                     BaseMonitor.skipEvent + " = true");
 
-            if (Main.options.valg) { 
+            if (Main.options.valg || Main.options.traj) { 
                 SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
                 if (config != null && !config.disabled) {
             	    int idx = eventActionStr.indexOf("has been violated on line");
@@ -304,7 +304,7 @@ public class RawMonitor extends Monitor {
         if (Main.options.statistics) {
             ret += stat.fieldDecl() + "\n";
         }
-        if (Main.options.valg) { 
+        if (Main.options.valg || Main.options.traj) { 
             SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
             if (config != null && !config.disabled) {
             	ret += "public boolean violated;\n";

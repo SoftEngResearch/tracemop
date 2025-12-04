@@ -287,10 +287,6 @@ public class Main {
 
         handleOptions(fixedArgsArray, jc);
 
-	if (options.valgCreate) {
-            options.valg = true;
-	}
-
         for (SpecConfig config : options.specConfigs) {
             options.specConfigMap.put(config.name, config);
         }

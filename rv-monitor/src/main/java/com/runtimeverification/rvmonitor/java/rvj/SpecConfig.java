@@ -4,7 +4,7 @@ public class SpecConfig {
     public String name;
     public boolean disabled = false;
     public double alpha = 0.9;
-    public double epsilon = 1.0;
+    public double epsilon = 0.1;
     public double threshold = 0.0001;
     public double initc = 5.0;
     public double initn = 0.0;

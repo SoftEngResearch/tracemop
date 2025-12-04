@@ -464,7 +464,7 @@ public class BaseMonitor extends Monitor {
 
         ret += aftereventMonitoringCode;
 
-        if (Main.options.valg) {
+        if (Main.options.valg || Main.options.traj) {
             SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
             if (config != null && !config.disabled) {
                 ret += "if (recordEvents) {\n";

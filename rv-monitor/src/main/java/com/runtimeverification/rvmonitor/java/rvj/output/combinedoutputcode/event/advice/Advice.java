@@ -259,7 +259,7 @@ public class Advice {
             //     if (isSync)
             //         ret += this.globalLock.getReleaseCode();
             // }
-            if (Main.options.valg) {
+            if (Main.options.valg || Main.options.traj) {
                 SpecConfig config = Main.options.specConfigMap.get(this.specName);
                 if (config != null && !config.disabled) {
                 	ret += "return true;\n";
@@ -290,7 +290,7 @@ public class Advice {
             ret += "}\n";
         }
         boolean returnBool = false;
-        if (Main.options.valg) {
+        if (Main.options.valg || Main.options.traj) {
             SpecConfig config = Main.options.specConfigMap.get(this.specName);
             if (config != null && !config.disabled) {
                 returnBool = true;

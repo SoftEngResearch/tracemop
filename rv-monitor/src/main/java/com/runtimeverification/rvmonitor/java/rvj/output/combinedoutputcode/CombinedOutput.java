@@ -235,7 +235,7 @@ public class CombinedOutput {
 
         ret += this.indexingTreeManager.decl();
 
-        if (Main.options.valg) {	
+        if (Main.options.valg || Main.options.traj) {	
         	ret += this.declareAgents();
         }
         {

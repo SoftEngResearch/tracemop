@@ -119,11 +119,8 @@ public class RVMOptions {
             converter = JavaMOPOptions.FileConverter.class)
     public File dbConfigFile = new File(System.getProperty("user.home"), ".trace-db.config");
     
-    @Parameter(names={"-valg"},description = "Enable Valg")
+    @Parameter(names={"-valg"},description = "Enable Valg agents")
     public boolean valg;
-
-    @Parameter(names = {"-valg-create"}, description = "Enable Valg -- always create")
-    public boolean valgCreate = false;
 
     @Parameter(names = {"-traj"}, description = "Enable trajectory saving for Valg agents")
     public boolean traj = false;

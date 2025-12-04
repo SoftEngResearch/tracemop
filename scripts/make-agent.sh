@@ -28,15 +28,8 @@ db_conf=$7
 stats=$8
 violation_from_ajc=$9
 valg=${10}
-valg_create=${11}
-shift 10
-
-traj="false"
-
-if [[ "$#" -gt 0 && ( "${!#}" == "true" || "${!#}" == "false" ) ]]; then
-  traj="${!#}"
-  set -- "${@:1:$(($#-1))}"
-fi
+traj=${11}
+shift 11
 
 spec_args=()
 while [[ $# -gt 0 ]]; do
@@ -80,17 +73,12 @@ function build_agent() {
    
     if [[ "$valg" == "true" ]]; then
         rv_monitor_flag+=("-valg")
-    fi
+    fi    
     
-    if [[ "$valg_create" == "true" ]]; then
-        rv_monitor_flag+=("-valg-create")
-    fi
-
-    rv_monitor_flag+=("${spec_args[@]}")
-
     if [[ "$traj" == "true" ]]; then
         rv_monitor_flag+=("-traj")
     fi
+    rv_monitor_flag+=("${spec_args[@]}")
     cp ${SCRIPT_DIR}/BaseAspect_new.aj ${props_dir}/BaseAspect.aj
     
     if [[ "${valg}" != "true" ]]; then
@@ -99,9 +87,9 @@ function build_agent() {
 
     for spec in ${prop_files}; do
         spec_basename=$(basename "${spec}" .mop)
+        disable_valg_for_this_spec=false
         spec_flag=""
 
-        disable_valg_for_this_spec=false
         for ((i = 0; i < ${#spec_args[@]}; i += 3)); do
             if [[ "${spec_args[i]}" == "-spec" ]]; then
                 spec_name="${spec_args[i+1]}"
@@ -113,21 +101,14 @@ function build_agent() {
             fi
         done
 
-        if [[ "$disable_valg_for_this_spec" == false ]]; then
-            if [[ "${valg_create}" == "true" ]]; then
-                spec_flag="-valg-create"
-            elif [[ "${valg}" == "true" ]]; then
-                spec_flag="-valg"
-            fi
+        if [[ "$disable_valg_for_this_spec" == false && ( "$valg" == "true" || "$traj" == "true" ) ]]; then
+            spec_flag="-valg"
         fi
 
-        if [[ "${valg}" == "true" || "${valg_create}" == "true" ]]; then
-            echo "Flags for javamop [${spec_basename}]: ${javamop_flag} ${spec_flag}"
-        fi
-
-        valg_option=""
-        [[ "${valg}" == "true" || "${valg_create}" == "true" ]] && valg_option="-valg"
-        javamop -baseaspect ${props_dir}/BaseAspect.aj -emop "${spec}" ${javamop_flag} ${valg_option}
+        if [[ "$valg" == "true" ]]; then
+            echo "Flags for javamop [${spec_basename}]: ${javamop_flag} ${spec_flag}"  
+    	fi
+    	javamop -baseaspect ${props_dir}/BaseAspect.aj -emop "${spec}" ${javamop_flag} ${spec_flag} 
     done
 
     rm -rf ${props_dir}/classes/mop; mkdir -p ${props_dir}/classes/mop

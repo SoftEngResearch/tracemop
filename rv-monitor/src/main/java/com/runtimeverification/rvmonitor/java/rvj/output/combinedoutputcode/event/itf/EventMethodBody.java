@@ -727,7 +727,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             CodeStmtCollection ifbody = new CodeStmtCollection();
             stmts.add(new CodeConditionStmt(ifcond, ifbody));
 
-            if (Main.options.valg) {
+            if (Main.options.valg || Main.options.traj) {
                 SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
                 if (config == null || !config.disabled) {
         	        addRLAgentCheck(ifbody, true);
@@ -748,7 +748,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                         dest.getWeakRefs(), monitorref);
                 ifbody.add(weakrefset);
             }
-            if (Main.options.valg) {
+            if (Main.options.valg || Main.options.traj) {
                 SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
                 if ((config == null || !config.disabled) &&
                     !this.event.getUniqueId().equals("createSet") && 
@@ -1145,7 +1145,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
     					    new CodeVarRefExpr(threadLoc),
     					    new CodeVarRefExpr(newAgent))));
 
-            if (Main.options.traj) {
+            if (Main.options.valg || Main.options.traj) {
         	    agentPutAdd.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
     			    		    CodeExpr.fromLegacy(CodeType.klass(), "RLAgentStore"), 
         					    "add",
@@ -1159,8 +1159,8 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                             	    this.rvmSpec.getName() + "_agents.get(threadLoc)");         
             CodeVariable rlAgent = new CodeVariable(new CodeType("RLAgent"), "rlAgent");
             stmts.add(new CodeVarDeclStmt(rlAgent, getAgentExpr));
-	    
-			String methodName = Main.options.valgCreate ? "createAction" : "decideAction";
+	   
+            String methodName = Main.options.valg ? "decideAction" : "createAction";
 			CodeMethodInvokeExpr decideActionExpr = new CodeMethodInvokeExpr(CodeType.bool(),
 						        new CodeVarRefExpr(rlAgent),
 						        methodName);
@@ -1193,7 +1193,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
         // It seems the original code assumes that defineNew:1--3 is not needed.
         // I hope that is correct assumption.
 
-        if (Main.options.valg) {
+        if (Main.options.valg || Main.options.traj) {
             SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
             if (config == null || !config.disabled) {
         	    addRLAgentCheck(stmts, false);
@@ -1212,7 +1212,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
 
             this.getMonitorFeatures().addRelatedEvent(this);
         }
-        if (Main.options.valg) {
+        if (Main.options.valg || Main.options.traj) {
             SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
             if ((config == null || !config.disabled) &&
                 this.rvmSpec.getParameters().size() != 0 && !specList.contains(this.rvmSpec.getName())) {
