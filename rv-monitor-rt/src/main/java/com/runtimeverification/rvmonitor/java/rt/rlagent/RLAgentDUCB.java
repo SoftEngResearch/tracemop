@@ -76,7 +76,7 @@ public class RLAgentDUCB {
     private void checkConverged() {
         double MuC = sumC / countC;
         double MuN = sumN / countN;
-        if (!converged && Math.abs(MuC - MuN) < THRESHOLD) {
+        if (!converged && Math.abs(1.0 - Math.abs(MuC - MuN)) < THRESHOLD) {
             converged = true;
             convStatus = MuC > MuN;
         }
@@ -111,7 +111,9 @@ public class RLAgentDUCB {
         }
 
         if (traj && lastTimestep >= 0) {
-            trajectory.add(new Step(true, reward, lastTimestep, lastSumC/lastCountC, lastSumN/lastCountN));
+            double lastMuC = lastSumC / lastCountC;
+            double lastMuN = lastSumN / lastCountN;
+            trajectory.add(new Step(true, reward, lastTimestep, lastMuC, lastMuN));
         }
         lastTimestep = currentStep;
         return true;
@@ -159,7 +161,9 @@ public class RLAgentDUCB {
         boolean action = (DUCBc >= DUCBn);
 
         if (traj && lastTimestep >= 0) {
-            trajectory.add(new Step(true, reward, lastTimestep, lastSumC/lastCountC, lastSumN/lastCountN));
+            double lastMuC = lastSumC / lastCountC;
+            double lastMuN = lastSumN / lastCountN;
+            trajectory.add(new Step(true, reward, lastTimestep, lastMuC, lastMuN));
         }
 
         checkConverged();
