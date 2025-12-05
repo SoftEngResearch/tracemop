@@ -1,7 +1,8 @@
 package com.runtimeverification.rvmonitor.java.rt.rlagent;
 
 import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
-import org.apache.commons.math3.distribution.BetaDistribution;
+// import org.apache.commons.math3.distribution.BetaDistribution;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,8 @@ public class RLAgentDSTS {
     private double lastAlphaN;
     private double lastBetaC;
     private double lastBetaN;
+
+    private static final Random RNG = new Random();
 
     public static class Step {
         public final boolean action;
@@ -165,10 +168,13 @@ public class RLAgentDSTS {
         betaC  *= (1.0 - GAMMA);
         betaN  *= (1.0 - GAMMA);
 
-        BetaDistribution distC = new BetaDistribution(alphaC, betaC);
-        BetaDistribution distN = new BetaDistribution(alphaN, betaN);
-        double thetaC = distC.sample();
-        double thetaN = distN.sample();
+        // BetaDistribution distC = new BetaDistribution(alphaC, betaC);
+        // BetaDistribution distN = new BetaDistribution(alphaN, betaN);
+        // double thetaC = distC.sample();
+        // double thetaN = distN.sample();
+
+        double thetaC = sampleBeta(alphaC, betaC);
+        double thetaN = sampleBeta(alphaN, betaN);
 
         boolean action = (thetaC >= thetaN);
 
@@ -217,4 +223,32 @@ public class RLAgentDSTS {
     public List<Step> getTrajectory() {
         return traj ? trajectory : null;
     }
+
+    private double sampleBeta(double alpha, double beta) {
+        double y1 = sampleGamma(alpha);
+        double y2 = sampleGamma(beta);
+        return y1 / (y1 + y2);
+    }
+
+    private double sampleGamma(double shape) {
+        if (shape < 1.0) {
+            double u = RNG.nextDouble();
+            return sampleGamma(1.0 + shape) * Math.pow(u, 1.0 / shape);
+        }
+
+        double d = shape - 1.0 / 3.0;
+        double c = 1.0 / Math.sqrt(9.0 * d);
+
+        while (true) {
+            double x = RNG.nextGaussian();
+            double v = 1.0 + c * x;
+            if (v <= 0) continue;
+
+            v = v * v * v;
+            double u = RNG.nextDouble();
+
+            if (u < 1 - 0.0331 * x * x * x * x) return d * v;
+            if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v;
+        }
+    }    
 }
