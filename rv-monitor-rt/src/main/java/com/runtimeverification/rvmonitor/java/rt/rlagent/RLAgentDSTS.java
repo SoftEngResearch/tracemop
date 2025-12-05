@@ -5,6 +5,7 @@ import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class RLAgentDSTS {
     private double alphaC;
@@ -37,7 +38,7 @@ public class RLAgentDSTS {
     private double lastBetaC;
     private double lastBetaN;
 
-    private static final Random RNG = new Random();
+    private final Random RNG = new Random();
 
     public static class Step {
         public final boolean action;
