@@ -2,7 +2,6 @@ package com.runtimeverification.rvmonitor.java.rt.rlagent;
 
 import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
 // import org.apache.commons.math3.distribution.BetaDistribution;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
