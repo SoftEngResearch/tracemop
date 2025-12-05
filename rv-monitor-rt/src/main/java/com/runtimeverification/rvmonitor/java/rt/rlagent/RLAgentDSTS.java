@@ -1,23 +1,22 @@
 package com.runtimeverification.rvmonitor.java.rt.rlagent;
 
 import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
-import java.util.Random;
+import org.apache.commons.math3.distribution.BetaDistribution;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RLAgentDUCB {
-    private double sumC;
-    private double sumN;
-    private double countC = 1.0;
-    private double countN = 1.0;
+public class RLAgentDSTS {
+    private double alphaC;
+    private double alphaN;
+    private double betaC = 1.0;
+    private double betaN = 1.0;
     private double reward;
-
+    
     private int numTotTraces = 0;
     private int numDupTraces = 0;
-    
+
     private double GAMMA;
-    private double C;
 
     private AbstractMonitor monitor = null;
     private HashSet<Integer> uniqueTraces;
@@ -28,15 +27,15 @@ public class RLAgentDUCB {
     public boolean converged = false;
     public boolean convStatus;
 
-    private boolean traj = false;
+    private boolean traj;
     private List<Step> trajectory;
 
     private boolean lastAction = true;
     private int lastTimestep = -1;
-    private double lastSumC;
-    private double lastSumN;
-    private double lastCountC;
-    private double lastCountN;
+    private double lastAlphaC;
+    private double lastAlphaN;
+    private double lastBetaC;
+    private double lastBetaN;
 
     public static class Step {
         public final boolean action;
@@ -54,19 +53,18 @@ public class RLAgentDUCB {
         }
     }
 
-    public RLAgentDUCB(HashSet<Integer> uniqueTraces,
-		double GAMMA, double C, double THRESHOLD, double initC, double initN) {
-		this(uniqueTraces, GAMMA, C, THRESHOLD, initC, initN, false);
-	}
+    public RLAgentDSTS(HashSet<Integer> uniqueTraces,
+        double GAMMA, double THRESHOLD, double initC, double initN) {
+        this(uniqueTraces, GAMMA, THRESHOLD, initC, initN, false);
+    }
 
-    public RLAgentDUCB(HashSet<Integer> uniqueTraces,
-        double GAMMA, double C, double THRESHOLD, double initC, double initN, boolean traj) {
+    public RLAgentDSTS(HashSet<Integer> uniqueTraces,
+        double GAMMA, double THRESHOLD, double initC, double initN, boolean traj) {
         this.uniqueTraces = uniqueTraces;
         this.GAMMA = GAMMA;
-        this.C = C;
         this.THRESHOLD = THRESHOLD;
-        this.sumC = initC;
-        this.sumN = initN;
+        this.alphaC = initC;
+        this.alphaN = initN;
         this.traj = traj;
         if (traj) {
             this.trajectory = new ArrayList<>();
@@ -74,25 +72,25 @@ public class RLAgentDUCB {
     }
 
     private void checkConverged() {
-        double MuC = sumC / countC;
-        double MuN = sumN / countN;
+        double MuC = alphaC / (alphaC + betaC);
+        double MuN = alphaN / (alphaN + betaN);
         if (!converged && Math.abs(1.0 - Math.abs(MuC - MuN)) < THRESHOLD) {
             converged = true;
-            convStatus = MuC > MuN;
+            convStatus = (MuC > MuN);
         }
     }
 
     public boolean createAction() {
-    	if (timeStep++ == 0) {
+        if (timeStep++ == 0) {
             lastTimestep = 0;
-    	    return true;
-    	}
+            return true;
+        }            
 
         int currentStep = timeStep - 1;
-        lastSumC = sumC;
-        lastSumN = sumN;
-        lastCountC = countC;
-        lastCountN = countN;
+        lastAlphaC = alphaC;
+        lastAlphaN = alphaN;
+        lastBetaC = betaC;
+        lastBetaN = betaN;
 
         if (monitor != null) {
             numTotTraces++;
@@ -103,41 +101,46 @@ public class RLAgentDUCB {
                 numDupTraces++;
                 reward = 0.0;
             }
-            sumC = GAMMA * sumC + reward;
-            countC = GAMMA * countC + 1.0;            
+            alphaC += reward;
+            betaC  += (1.0 - reward);
         } else {
-    	    reward = (double)numDupTraces / numTotTraces;
-            sumN = GAMMA * sumN + reward;
-            countN = GAMMA * countN + 1.0;
+            reward = (double)numDupTraces / numTotTraces;
+            alphaN += reward;
+            betaN  += (1.0 - reward);
         }
 
+        alphaC *= (1.0 - GAMMA);
+        alphaN *= (1.0 - GAMMA);
+        betaC  *= (1.0 - GAMMA);
+        betaN  *= (1.0 - GAMMA);
+
         if (traj && lastTimestep >= 0) {
-            double lastMuC = lastSumC / lastCountC;
-            double lastMuN = lastSumN / lastCountN;
-            trajectory.add(new Step(true, reward, lastTimestep, lastMuC, lastMuN));
+            double lastMuC = lastAlphaC / (lastAlphaC + lastBetaC);
+            double lastMuN = lastAlphaN / (lastAlphaN + lastBetaN); 
+            trajectory.add(new Step(lastAction, reward, lastTimestep, lastMuC, lastMuN));
         }
         lastTimestep = currentStep;
         return true;
     }
 
     public boolean decideAction() {
-    	// Initial Action Selection 
-    	if (timeStep++ == 0) {
-            boolean initAction = (sumN <= sumC);
+        // Initial Action Selection 
+        if (timeStep++ == 0) {
+            boolean initAction = (alphaN <= alphaC);
             lastAction = initAction;
             lastTimestep = 0;
-    	    return initAction;
-    	}
-    	// Learning Converged 
-    	if (converged) {
-    	    return convStatus;
-    	}
+            return initAction;
+        }            
+        // Learning Converged
+        if (converged) {
+            return convStatus;
+        }
 
         int currentStep = timeStep - 1;
-        lastSumC = sumC;
-        lastSumN = sumN;
-        lastCountC = countC;
-        lastCountN = countN;
+        lastAlphaC = alphaC;
+        lastAlphaN = alphaN;
+        lastBetaC = betaC;
+        lastBetaN = betaN;
 
         // Reward Update
         if (monitor != null) {
@@ -149,29 +152,36 @@ public class RLAgentDUCB {
                 numDupTraces++;
                 reward = 0.0;
             }
-            sumC = GAMMA * sumC + reward;
-            countC = GAMMA * countC + 1.0;
+            alphaC += reward;
+            betaC  += (1.0 - reward);
         } else {
-    	    reward = (double)numDupTraces / numTotTraces;
-            sumN = GAMMA * sumN + reward;
-            countN = GAMMA * countN + 1.0;
+            reward = (double)numDupTraces / numTotTraces;
+            alphaN += reward;
+            betaN  += (1.0 - reward);
         }
-        
-        double DUCBc = sumC / countC + C * Math.sqrt(Math.log(timeStep) / countC);
-        double DUCBn = sumN / countN + C * Math.sqrt(Math.log(timeStep) / countN);
 
-        boolean action = (DUCBc >= DUCBn);
+        alphaC *= (1.0 - GAMMA);
+        alphaN *= (1.0 - GAMMA);
+        betaC  *= (1.0 - GAMMA);
+        betaN  *= (1.0 - GAMMA);
+
+        BetaDistribution distC = new BetaDistribution(alphaC, betaC);
+        BetaDistribution distN = new BetaDistribution(alphaN, betaN);
+        double thetaC = distC.sample();
+        double thetaN = distN.sample();
+
+        boolean action = (thetaC >= thetaN);
 
         if (traj && lastTimestep >= 0) {
-            double lastMuC = lastSumC / lastCountC;
-            double lastMuN = lastSumN / lastCountN;
-            trajectory.add(new Step(true, reward, lastTimestep, lastMuC, lastMuN));
+            double lastMuC = lastAlphaC / (lastAlphaC + lastBetaC);
+            double lastMuN = lastAlphaN / (lastAlphaN + lastBetaN); 
+            trajectory.add(new Step(lastAction, reward, lastTimestep, lastMuC, lastMuN));
         }
-
+        
         checkConverged();
-
+        
         lastAction = action;
-        lastTimestep = currentStep;
+        lastTimestep = timeStep - 1;
 
         return action;
     }
@@ -187,17 +197,17 @@ public class RLAgentDUCB {
     public String getTrajectoryString() {
         if (!traj || trajectory == null) return "";
         StringBuilder sb = new StringBuilder();
-        for (Step step : trajectory) {
+        for (Step s : trajectory) {
             sb.append("<")
-              .append(step.timestep)
+              .append(s.timestep)
               .append(": A=")
-              .append(step.action ? "create" : "ncreate")
+              .append(s.action ? "create" : "ncreate")
               .append(", R=")
-              .append(String.format("%.2f", step.reward))
+              .append(String.format("%.2f", s.reward))
               .append(", MuC=")
-              .append(String.format("%.2f", step.MuC))
+              .append(String.format("%.2f", s.MuC))
               .append(", MuN=")
-              .append(String.format("%.2f", step.MuN))
+              .append(String.format("%.2f", s.MuN))
               .append("> ");
         }
         if (converged) sb.append("[converged]");
