@@ -38,6 +38,7 @@ def parse_trajectories_file(file_path, spec_name):
                     traces.append(trace)
     return traces
 
+"""
 def fill_missing(trace, decay=DECAY_RATE):
     if not trace:
         return []
@@ -54,6 +55,7 @@ def fill_missing(trace, decay=DECAY_RATE):
         else:
             inferred.append(1 if weights[1] >= weights[0] else 0)
     return inferred
+"""
 
 def decide_action(Qc, Qn, alpha, epsilon, time_step):
     if time_step == 0:
@@ -64,11 +66,12 @@ def decide_action(Qc, Qn, alpha, epsilon, time_step):
 
 def simulate_trace(trace, alpha, epsilon):
     Qc, Qn = DEFAULT_QC, DEFAULT_QN
-    num_tot, num_dup, converged = 0, 0, False
+    num_tot, num_dup, converged, converged_action = 0, 0, False, None
     for t, true_action in enumerate(trace):
         if converged:
-            continue
-        action = decide_action(Qc, Qn, alpha, epsilon, t)
+            action = converged_action
+        else:
+            action = decide_action(Qc, Qn, alpha, epsilon, t)
         if action:
             num_tot += 1
             reward = 1.0 if true_action == 1 else 0.0
@@ -80,9 +83,10 @@ def simulate_trace(trace, alpha, epsilon):
             Qn += alpha * (reward - Qn)
         if abs(1.0 - abs(Qc - Qn)) < DEFAULT_THRESHOLD:
             converged = True
+            converged_action = Qn <= Qc
     return num_tot - num_dup
 
-def make_objective(spec, traces):
+def make_objective(traces):
     def objective(trial):
         alpha = round(trial.suggest_float("alpha", 0.01, 0.99, step=0.01), 2)
         epsilon = round(trial.suggest_float("epsilon", 0.01, 0.99, step=0.01), 2)
@@ -94,12 +98,13 @@ def tune_all_specs(traj_file, n_trials):
     specs = parse_all_specs(traj_file)
     results = {}
     for spec in specs:
-        partial_traces = parse_trajectories_file(traj_file, spec)
-        if not partial_traces:
-            continue
-        traces = [fill_missing(trace) for trace in partial_traces]
+        # partial_traces = parse_trajectories_file(traj_file, spec)
+        # if not partial_traces:
+        #     continue
+        # traces = [fill_missing(trace) for trace in partial_traces]
+        traces = parse_trajectories_file(traj_file, spec)
         study = optuna.create_study(direction="maximize")
-        study.optimize(make_objective(spec, traces), n_trials=n_trials, show_progress_bar=False)
+        study.optimize(make_objective(traces), n_trials=n_trials, show_progress_bar=False)
         best = {
             "alpha": round(study.best_params["alpha"], 2),
             "epsilon": round(study.best_params["epsilon"], 2),
@@ -107,9 +112,9 @@ def tune_all_specs(traj_file, n_trials):
             "Qc_init": DEFAULT_QC,
             "Qn_init": DEFAULT_QN,
         }
+        # print(f"[{spec}] alpha={best['alpha']}, epsilon={best['epsilon']}, "
+        #       f"threshold={best['threshold']}, Qc_init={best['Qc_init']}, Qn_init={best['Qn_init']}")
         results[spec] = best
-        print(f"[{spec}] Optimal: alpha={best['alpha']}, epsilon={best['epsilon']}, "
-              f"threshold={best['threshold']}, Qc_init={best['Qc_init']}, Qn_init={best['Qn_init']}")
     return results
 
 def main():
@@ -117,7 +122,8 @@ def main():
         sys.exit("Usage: python param_tune.py <trajectories_file> <n_trials>")
     traj_file, n_trials = sys.argv[1], int(sys.argv[2])
     results = tune_all_specs(traj_file, n_trials)
-    print(json.dumps(results))
+    with open("tuned_hyperparameters.json", "w") as f:
+        json.dump(results, f, indent=4)
 
 if __name__ == "__main__":
     main()
