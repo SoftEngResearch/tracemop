@@ -67,17 +67,18 @@ def decide_action(Qc, Qn, alpha, epsilon, time_step):
 
 def simulate_trace(trace, alpha, epsilon):
     Qc, Qn = INIT_C, INIT_N
-    num_tot, num_dup, converged, converged_action = 0, 0, False, None
+    num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
     for time_step, true_action in enumerate(trace):
         if converged:
-            action = converged_action
+            if converged_action and true_action == 1:
+                num_uniq += 1
+            continue
         else:
             action = decide_action(Qc, Qn, alpha, epsilon, time_step)
         if action:
             num_tot += 1
+            num_uniq, num_dup = num_uniq + (true_action == 1), num_dup + (true_action == 0)
             reward = 1.0 if true_action == 1 else 0.0
-            if true_action == 0:
-                num_dup += 1
             Qc += alpha * (reward - Qc)
         else:
             reward = (num_dup / num_tot) if num_tot > 0 else 0.0
@@ -85,7 +86,7 @@ def simulate_trace(trace, alpha, epsilon):
         if abs(1.0 - abs(Qc - Qn)) < DEFAULT_THRESHOLD:
             converged = True
             converged_action = Qn <= Qc
-    return num_tot - num_dup
+    return num_uniq 
 
 def decide_action_ducb(sumC, sumN, countC, countN, time_step, C):
     if time_step == 0:
@@ -97,17 +98,18 @@ def decide_action_ducb(sumC, sumN, countC, countN, time_step, C):
 def simulate_trace_ducb(trace, gamma, C):
     sumC, sumN = INIT_C, INIT_N
     countC, countN = 1.0, 1.0
-    num_tot, num_dup, converged, converged_action = 0, 0, False, None
+    num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
     for time_step, true_action in enumerate(trace):
         if converged:
-            action = converged_action
+            if converged_action and true_action == 1:
+                num_uniq += 1
+            continue
         else:
             action = decide_action_ducb(sumC, sumN, countC, countN, time_step, C)
         if action:
             num_tot += 1
+            num_uniq, num_dup = num_uniq + (true_action == 1), num_dup + (true_action == 0)
             reward = 1.0 if true_action == 1 else 0.0
-            if true_action == 0:
-                num_dup += 1
             sumC = gamma * sumC + reward
             countC = gamma * countC + 1.0
         else:
@@ -119,21 +121,20 @@ def simulate_trace_ducb(trace, gamma, C):
         if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
             converged = True
             converged_action = MuN <= MuC
-    return num_tot - num_dup
+    return num_uniq 
 
 def sample_beta(alpha, beta):
-    if alpha <= 0 or beta <= 0:
-        alpha = max(alpha, 1e-6)
-        beta = max(beta, 1e-6)
     return random.betavariate(alpha, beta)
 
 def simulate_trace_dsts(trace, gamma):
     alphaC, alphaN = INIT_C, INIT_N
     betaC, betaN = 1.0, 1.0
-    num_tot, num_dup, converged, converged_action = 0, 0, False, None
+    num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
     for time_step, true_action in enumerate(trace):
         if converged:
-            action = converged_action
+            if converged_action and true_action == 1:
+                num_uniq += 1
+            continue
         else:
             if time_step == 0:
                 action = alphaN <= alphaC
@@ -141,12 +142,10 @@ def simulate_trace_dsts(trace, gamma):
                 thetaC = sample_beta(alphaC, betaC)
                 thetaN = sample_beta(alphaN, betaN)
                 action = thetaN <= thetaC
-
         if action:
             num_tot += 1
+            num_uniq, num_dup = num_uniq + (true_action == 1), num_dup + (true_action == 0)
             reward = 1.0 if true_action == 1 else 0.0
-            if true_action == 0:
-                num_dup += 1
             alphaC += reward
             betaC  += (1 - reward)
         else:
@@ -164,7 +163,7 @@ def simulate_trace_dsts(trace, gamma):
         if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
             converged = True
             converged_action = MuN <= MuC
-    return num_tot - num_dup
+    return num_uniq
 
 def make_objective(traces, algorithm):
     def objective(trial):
