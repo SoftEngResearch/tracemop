@@ -163,10 +163,10 @@ public class RLAgentDSTS {
             betaN  += (1.0 - reward);
         }
 
-        alphaC *= (1.0 - GAMMA);
-        alphaN *= (1.0 - GAMMA);
-        betaC  *= (1.0 - GAMMA);
-        betaN  *= (1.0 - GAMMA);
+        alphaC = Math.max(alphaC * (1.0 - GAMMA), 1e-6);
+        alphaN = Math.max(alphaN * (1.0 - GAMMA), 1e-6);
+        betaC  = Math.max(betaC  * (1.0 - GAMMA), 1e-6);
+        betaN  = Math.max(betaN  * (1.0 - GAMMA), 1e-6);
 
         // BetaDistribution distC = new BetaDistribution(alphaC, betaC);
         // BetaDistribution distN = new BetaDistribution(alphaN, betaN);
