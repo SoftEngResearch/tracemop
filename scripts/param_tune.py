@@ -127,7 +127,7 @@ def sample_beta(alpha, beta):
     return random.betavariate(alpha, beta)
 
 def simulate_trace_dsts(trace, gamma):
-    alphaC, alphaN = INIT_C, INIT_N
+    alphaC, alphaN = max(INIT_C, 1.0), max(INIT_N, 1.0)
     betaC, betaN = 1.0, 1.0
     num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
     for time_step, true_action in enumerate(trace):
