@@ -1145,7 +1145,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
     					    new CodeVarRefExpr(threadLoc),
     					    new CodeVarRefExpr(newAgent))));
 
-            if (Main.options.valg || Main.options.traj) {
+            if (Main.options.traj) {
         	    agentPutAdd.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
     			    		    CodeExpr.fromLegacy(CodeType.klass(), "RLAgentStore"), 
         					    "add",
