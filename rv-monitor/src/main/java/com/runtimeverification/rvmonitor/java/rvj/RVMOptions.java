@@ -118,6 +118,9 @@ public class RVMOptions {
             description = "File containing database configurations to use for capturing traces",
             converter = JavaMOPOptions.FileConverter.class)
     public File dbConfigFile = new File(System.getProperty("user.home"), ".trace-db.config");
+
+    @Parameter(names = "-series", description = "Enable time-series collection of monitors.")
+    public boolean series = false;
     
     @Parameter(names={"-valg"},description = "Enable Valg agents")
     public boolean valg;

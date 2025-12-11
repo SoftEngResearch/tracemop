@@ -1,6 +1,7 @@
 package com.runtimeverification.rvmonitor.java.rt.tablebase;
 
 import com.runtimeverification.rvmonitor.java.rt.RVMObject;
+import com.runtimeverification.rvmonitor.java.rt.util.TimeSeries;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,8 @@ public abstract class AbstractMonitor implements IMonitor, RVMObject {
 	private boolean activated = true;
 
 	public int traceVal = 0;
-	public boolean recordEvents = true;
+        public TimeSeries.Node node = null; 
+        public boolean recordEvents = true;
 
 	/**
 	 * Terminates this monitor instance. The actual code depends on the specification and,

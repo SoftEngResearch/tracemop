@@ -268,6 +268,11 @@ public class RuntimeServiceManager implements ICodeGenerator {
             CodeExpr invoke = new CodeMethodInvokeExpr(CodeType.foid(), type,
                     null, "enableFineGrainedLock", enabled);
             init.add(new CodeExprStmt(invoke));
+            if (Main.options.series) {
+                CodeExpr invoke2 = new CodeMethodInvokeExpr(CodeType.foid(), 
+                    CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "registerShutdownHook");
+                init.add(new CodeExprStmt(invoke2));
+            }
         }
 
         return new ServiceDefinition(desc, null, null, init);

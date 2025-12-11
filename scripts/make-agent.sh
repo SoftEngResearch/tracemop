@@ -1,20 +1,13 @@
 #!/bin/bash
 #
 # Create Java agent for TraceMOP
-# Usage: make-agent.sh <property-directory> <output-directory> <verbose-mode> <tracking-mode> <trace-dir> <agent-name> <db-conf> [stats] [violation-from-ajc]
+# Usage: make-agent.sh <property-directory> <output-directory> <verbose-mode> <tracking-mode> <trace-dir> <agent-name> <db-conf> <stats> <series> <violation-from-ajc> <valg> <traj> [spec...]
 # Source: https://github.com/SoftEngResearch/tracemop/blob/master/scripts/make-agent.sh
 #
 SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 
-if [[ $# -lt 7 ]]; then
-    echo "Usage: $0 property-directory output-directory verbose-mode tracking-mode trace-dir agent-name db-conf stats violation-from-ajc"
-    echo "       verbose-mode: {verbose|quiet}"
-    echo "       tracking-mode: {track|no-track}"
-    echo "       db-conf: file containing the database configurations to use"
-    echo "       stats: {stats|no-stats}, optional default to no-stats"
-    echo "       violation-from-ajc: {true|false}, optional default to true"
-    echo "       valg: {true|false}, optional default to disabling valg"
-    echo "       spec: hyperparameters for a spec, or disabling"
+if [[ $# -lt 12 ]]; then
+    echo "Usage: $0 property-directory output-directory verbose-mode tracking-mode trace-dir agent-name db-conf stats series valg traj [spec...]"
     exit
 fi
 
@@ -26,10 +19,11 @@ trace_dir=$5
 agent_name=$6
 db_conf=$7
 stats=$8
-violation_from_ajc=$9
-valg=${10}
-traj=${11}
-shift 11
+series_enabled=$9
+violation_from_ajc=${10}
+valg=${11}
+traj=${12}
+shift 12
 
 spec_args=()
 while [[ $# -gt 0 ]]; do
@@ -70,7 +64,11 @@ function build_agent() {
         javamop_flag="${javamop_flag} -locationFromAjc"
         rv_monitor_flag+=("-locationFromAjc")
     fi
-   
+  
+    if [[ "$series_enabled" == "true" ]]; then
+        rv_monitor_flag+=("-series") 
+    fi
+
     if [[ "$valg" == "true" ]]; then
         rv_monitor_flag+=("-valg")
     fi    

@@ -21,6 +21,7 @@ public class Imports {
             "com.runtimeverification.rvmonitor.java.rt.ref.*",
             "com.runtimeverification.rvmonitor.java.rt.table.*",
     	    "com.runtimeverification.rvmonitor.java.rt.rlagent.*",
+            "com.runtimeverification.rvmonitor.java.rt.util.TimeSeries",
             "com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractIndexingTree",
             // "com.runtimeverification.rvmonitor.java.rt.tablebase.IBucketNode",
             "com.runtimeverification.rvmonitor.java.rt.tablebase.SetEventDelegator",

@@ -742,7 +742,13 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                                         CodeType.object(), sourcemonref, "clone")));
                 ifbody.add(decl);
                 monitorref = new CodeVarRefExpr(decl.getVariable());
-                
+
+                if (Main.options.series) { 
+                    ifbody.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
+                            CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor", 
+                            CodeLiteralExpr.string(this.rvmSpec.getName()),
+                            new CodeVarRefExpr(new CodeVariable(CodeType.object(), "joinpoint")), monitorref))); 
+                }
 		        MonitorWeakRefSetLazyCode weakrefset = new MonitorWeakRefSetLazyCode(
                         this.getMonitorFeatures(), sourceprms, targetprms,
                         dest.getWeakRefs(), monitorref);
@@ -1210,6 +1216,12 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             monitorref = create.getDeclaredMonitorRef();
             stmts.add(create);
 
+            if (Main.options.series) { 
+                stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
+                        CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor", 
+                        CodeLiteralExpr.string(this.rvmSpec.getName()),
+                        new CodeVarRefExpr(new CodeVariable(CodeType.object(), "joinpoint")), monitorref))); 
+            }
             this.getMonitorFeatures().addRelatedEvent(this);
         }
         if (Main.options.valg || Main.options.traj) {

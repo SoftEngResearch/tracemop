@@ -4,8 +4,9 @@ SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 
 TRACK=${1:-false}
 STATS=${2:-false}
+SERIES=${3:-false}
 
-shift 2
+shift 3
 
 valg=false
 traj=false
@@ -76,7 +77,7 @@ function install() {
     props="props-track"
   fi
 
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} true ${valg} ${traj} "${spec_configs[@]}"
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} ${SERIES} true ${valg} ${traj} "${spec_configs[@]}"
 
   if [[ ${TRACK} == "track" ]]; then
     # Add aspect
