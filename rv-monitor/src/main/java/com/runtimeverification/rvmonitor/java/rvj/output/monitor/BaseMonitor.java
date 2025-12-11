@@ -474,7 +474,6 @@ public class BaseMonitor extends Monitor {
             }
         } else if (Main.options.series) {
             // ret += "traceVal += (System.identityHashCode(joinpoint) + random.nextInt());\n";
-            // ret += "eventCount++;\n";
             ret += "TimeSeries.updateMonitor(this, joinpoint);\n";
         }
         if (retbool)

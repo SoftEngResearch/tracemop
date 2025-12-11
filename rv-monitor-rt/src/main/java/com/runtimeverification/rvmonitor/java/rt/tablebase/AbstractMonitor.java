@@ -13,8 +13,8 @@ public abstract class AbstractMonitor implements IMonitor, RVMObject {
 	private boolean activated = true;
 
 	public int traceVal = 0;
-        public TimeSeries.Node node = null; 
-        public boolean recordEvents = true;
+    public TimeSeries.Node node = null; 
+    public boolean recordEvents = true;
 
 	/**
 	 * Terminates this monitor instance. The actual code depends on the specification and,
