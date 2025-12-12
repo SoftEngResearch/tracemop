@@ -4,9 +4,9 @@ import math
 import os
 import random
 
-INIT_C = 1.0
-INIT_N = 1.0
-DEFAULT_THRESHOLD = 0.01
+DEFAULT_THRESHOLD = 0.0001
+INIT_C = 5.0
+INIT_N = 0.0
 
 def parse_main_series_file(filename):
     series_list = []
@@ -222,8 +222,8 @@ def build_all_plots(main_series, overlay_map, target_location, output_dir):
                         ax.scatter(o_xs, o_ys, s=25)
 
                 if overlay_conv is not None:
-                    ax.scatter(c, points[overlay_conv], color="black", s=25)
-                    ax.scatter(c, overlay_points[overlay_conv-1], marker='x', color="black", s=25)
+                    # ax.scatter(overlay_conv, points[overlay_conv], color="black", s=25)
+                    ax.scatter(overlay_conv, overlay_points[-1], marker='x', color="black", s=25)
 
                 padding = 0.5
                 max_x = end - 1
