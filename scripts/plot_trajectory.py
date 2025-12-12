@@ -161,8 +161,8 @@ def simulate_series_dsts(series, gamma):
             converged_step = t + 1
     return points, converged_step
 
-def build_all_plots(main_series, overlay_map, target_location):
-    output_dir = "plots"
+def build_all_plots(main_series, overlay_map, target_location, output_dir):
+    # output_dir = "plots"
     os.makedirs(output_dir, exist_ok=True)
     file_index = 1
 
@@ -246,27 +246,31 @@ def main():
         if os.path.isfile(third_arg):
             overlay_trajectories = parse_trajectory(third_arg)
             overlay_series = {loc: (points, conv) for loc, points, conv in overlay_trajectories}
+            output_dir = "plots" + target_location.replace(' ', '') + "-traj"
         else:
             algorithm = third_arg.lower()
             params = [float(x) for x in sys.argv[4:]]
             overlay_series = {}
-            for loc, points, _ in main_series:
+            for loc, points in main_series:
                 if algorithm == "default":
                     alpha, epsilon = params
                     sim_points, conv_step = simulate_series(points, alpha, epsilon)
                     overlay_series[loc] = (sim_points, conv_step)
+                    output_dir = f"plots-{target_location.replace(' ', '')}-default-{alpha}-{epsilon}" 
                 elif algorithm == "ducb":
                     gamma, C = params
                     sim_points, conv_step = simulate_series_ducb(points, gamma, C)
                     overlay_series[loc] = (sim_points, conv_step)
+                    output_dir = f"plots-{target_location.replace(' ', '')}-ducb-{gamma}-{C}" 
                 elif algorithm == "dsts":
                     gamma = params[0]
                     sim_points, conv_step = simulate_series_dsts(points, gamma)
                     overlay_series[loc] = (sim_points, conv_step)
+                    output_dir = f"plots-{target_location.replace(' ', '')}-dsts-{gamma}" 
                 else:
                     raise ValueError(f"Unknown algorithm: {algorithm}")
 
-    build_all_plots(main_series, overlay_series, target_location)
+    build_all_plots(main_series, overlay_series, target_location, output_dir)
 
 if __name__ == "__main__":
     main()
