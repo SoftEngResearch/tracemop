@@ -803,7 +803,7 @@ public class BaseMonitor extends Monitor {
 //            ret += "ret.trace = new ArrayList<String>();\n";
 //            ret += "ret.trace.addAll(this.trace);\n";
         }
-        if (Main.options.series) {
+        if (Main.options.valg || Main.options.traj || Main.options.series) {
             ret += "ret.location = this.location;\n";
             ret += "ret.node = this.node;\n";
         }
