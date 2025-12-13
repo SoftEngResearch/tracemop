@@ -163,13 +163,14 @@ def simulate_series_dsts(series, gamma):
     for time_step, true_action in enumerate(series):
         if converged_step is not None:
             break
-        if time_step == 0:
-            action = alphaN <= alphaC
         else:
-            thetaC = sample_beta(alphaC, betaC, rng)
-            thetaN = sample_beta(alphaN, betaN, rng)
-            action = thetaN <= thetaC
-        points.append(1 if action else 0)
+            if time_step == 0:
+                action = alphaN <= alphaC
+            else:
+                thetaC = sample_beta(alphaC, betaC, rng)
+                thetaN = sample_beta(alphaN, betaN, rng)
+                action = thetaN <= thetaC
+            points.append(1 if action else 0)
         if action:
             num_tot += 1
             num_dup += (true_action == 0)
