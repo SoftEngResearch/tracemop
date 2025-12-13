@@ -114,7 +114,9 @@ def sample_beta(alpha, beta, rng):
 def sample_gamma(shape, rng):
     if shape < 1.0:
         u = rng.random()
-        return sample_gamma(1.0 + shape, rng) * (u ** (1.0 / shape))
+        y = sample_gamma(1.0 + shape, rng)
+        result = y * (u ** (1.0 / shape))
+        return max(result, 1e-12)
     d = shape - 1.0 / 3.0
     c = 1.0 / math.sqrt(9.0 * d)
     while True:
@@ -239,4 +241,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
