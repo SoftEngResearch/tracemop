@@ -1,7 +1,6 @@
 package com.runtimeverification.rvmonitor.java.rt.rlagent;
 
 import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
-// import org.apache.commons.math3.distribution.BetaDistribution;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,8 +61,8 @@ public class RLAgentDSTS {
     public RLAgentDSTS(double GAMMA, double THRESHOLD, double initC, double initN, boolean traj) {
         this.GAMMA = GAMMA;
         this.THRESHOLD = THRESHOLD;
-        this.alphaC = initC;
-        this.alphaN = initN;
+        this.alphaC = Math.max(initC, 1.0);
+        this.alphaN = Math.max(initN, 1.0);
         this.traj = traj;
         if (traj) {
             this.trajectory = new ArrayList<>();
@@ -107,10 +106,10 @@ public class RLAgentDSTS {
             betaN  += (1.0 - reward);
         }
 
-        alphaC *= (1.0 - GAMMA);
-        alphaN *= (1.0 - GAMMA);
-        betaC  *= (1.0 - GAMMA);
-        betaN  *= (1.0 - GAMMA);
+        alphaC = Math.max(alphaC * (1.0 - GAMMA), 1e-6);
+        alphaN = Math.max(alphaN * (1.0 - GAMMA), 1e-6);
+        betaC  = Math.max(betaC  * (1.0 - GAMMA), 1e-6);
+        betaN  = Math.max(betaN  * (1.0 - GAMMA), 1e-6);
 
         if (traj && lastTimestep >= 0) {
             double lastMuC = lastAlphaC / (lastAlphaC + lastBetaC);
@@ -161,11 +160,6 @@ public class RLAgentDSTS {
         alphaN = Math.max(alphaN * (1.0 - GAMMA), 1e-6);
         betaC  = Math.max(betaC  * (1.0 - GAMMA), 1e-6);
         betaN  = Math.max(betaN  * (1.0 - GAMMA), 1e-6);
-
-        // BetaDistribution distC = new BetaDistribution(alphaC, betaC);
-        // BetaDistribution distN = new BetaDistribution(alphaN, betaN);
-        // double thetaC = distC.sample();
-        // double thetaN = distN.sample();
 
         double thetaC = sampleBeta(alphaC, betaC);
         double thetaN = sampleBeta(alphaN, betaN);

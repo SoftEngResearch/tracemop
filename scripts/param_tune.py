@@ -106,10 +106,31 @@ def simulate_series_ducb(series, gamma, C):
             converged_action = MuN <= MuC
     return num_uniq
 
-def sample_beta(alpha, beta):
-    return random.betavariate(alpha, beta)
+def sample_beta(alpha, beta, rng):
+    y1 = sample_gamma(alpha, rng)
+    y2 = sample_gamma(beta, rng)
+    return y1 / (y1 + y2)
+
+def sample_gamma(shape, rng):
+    if shape < 1.0:
+        u = rng.random()
+        return sample_gamma(1.0 + shape, rng) * (u ** (1.0 / shape))
+    d = shape - 1.0 / 3.0
+    c = 1.0 / math.sqrt(9.0 * d)
+    while True:
+        x = rng.gauss(0, 1)
+        v = 1 + c * x
+        if v <= 0:
+            continue
+        v = v**3
+        u = rng.random()
+        if u < 1 - 0.0331 * x**4:
+            return d * v
+        if math.log(u) < 0.5 * x**2 + d * (1 - v + math.log(v)):
+            return d * v
 
 def simulate_series_dsts(series, gamma):
+    rng = random.Random()
     alphaC, alphaN = max(INIT_C, 1.0), max(INIT_N, 1.0)
     betaC, betaN = 1.0, 1.0
     num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
@@ -122,8 +143,8 @@ def simulate_series_dsts(series, gamma):
             if time_step == 0:
                 action = alphaN <= alphaC
             else:
-                thetaC = sample_beta(alphaC, betaC)
-                thetaN = sample_beta(alphaN, betaN)
+                thetaC = sample_beta(alphaC, betaC, rng)
+                thetaN = sample_beta(alphaN, betaN, rng)
                 action = thetaN <= thetaC
         if action:
             num_tot += 1
