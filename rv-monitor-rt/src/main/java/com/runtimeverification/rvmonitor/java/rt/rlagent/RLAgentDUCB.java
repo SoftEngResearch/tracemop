@@ -20,7 +20,6 @@ public class RLAgentDUCB {
     private double C;
 
     private AbstractMonitor monitor = null;
-    private HashSet<Integer> uniqueTraces;
 
     private int timeStep = 0;
 
@@ -54,14 +53,11 @@ public class RLAgentDUCB {
         }
     }
 
-    public RLAgentDUCB(HashSet<Integer> uniqueTraces,
-		double GAMMA, double C, double THRESHOLD, double initC, double initN) {
-		this(uniqueTraces, GAMMA, C, THRESHOLD, initC, initN, false);
+    public RLAgentDUCB(double GAMMA, double C, double THRESHOLD, double initC, double initN) {
+		this(GAMMA, C, THRESHOLD, initC, initN, false);
 	}
 
-    public RLAgentDUCB(HashSet<Integer> uniqueTraces,
-        double GAMMA, double C, double THRESHOLD, double initC, double initN, boolean traj) {
-        this.uniqueTraces = uniqueTraces;
+    public RLAgentDUCB(double GAMMA, double C, double THRESHOLD, double initC, double initN, boolean traj) {
         this.GAMMA = GAMMA;
         this.C = C;
         this.THRESHOLD = THRESHOLD;
@@ -96,8 +92,7 @@ public class RLAgentDUCB {
 
         if (monitor != null) {
             numTotTraces++;
-            if (!uniqueTraces.contains(monitor.traceVal)) {
-                uniqueTraces.add(monitor.traceVal);
+            if (monitor.node.count == 1) {
                 reward = 1.0;
             } else {
                 numDupTraces++;
@@ -142,8 +137,7 @@ public class RLAgentDUCB {
         // Reward Update
         if (monitor != null) {
             numTotTraces++;
-            if (!uniqueTraces.contains(monitor.traceVal)) {
-                uniqueTraces.add(monitor.traceVal);
+            if (monitor.node.count == 1) {
                 reward = 1.0;
             } else {
                 numDupTraces++;

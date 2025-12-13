@@ -468,12 +468,10 @@ public class BaseMonitor extends Monitor {
             SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
             if (config != null && !config.disabled) {
                 ret += "if (recordEvents) {\n";
-            	ret += "traceVal += (System.identityHashCode(joinpoint) + random.nextInt());\n";
-                // ret += "TimeSeries.updateMonitor(this, joinpoint);\n";
+                ret += "TimeSeries.updateMonitor(this, joinpoint);\n";
             	ret += "}\n";
             }
         } else if (Main.options.series) {
-            // ret += "traceVal += (System.identityHashCode(joinpoint) + random.nextInt());\n";
             ret += "TimeSeries.updateMonitor(this, joinpoint);\n";
         }
         if (retbool)

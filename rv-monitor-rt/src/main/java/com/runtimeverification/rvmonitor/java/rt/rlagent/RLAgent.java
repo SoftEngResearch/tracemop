@@ -19,7 +19,6 @@ public class RLAgent {
     private double ALPHA;
 
     private AbstractMonitor monitor = null;
-    private HashSet<Integer> uniqueTraces;
 
     private int timeStep = 0;
 
@@ -51,14 +50,11 @@ public class RLAgent {
         }
     }
 
-    public RLAgent(HashSet<Integer> uniqueTraces,
-		double alpha, double epsilon, double threshold, double initC, double initN) {
-		this(uniqueTraces, alpha, epsilon, threshold, initC, initN, false);
-	}
+    public RLAgent(double alpha, double epsilon, double threshold, double initC, double initN) {
+                this(alpha, epsilon, threshold, initC, initN, false);
+        }
 
-    public RLAgent(HashSet<Integer> uniqueTraces,
-        double alpha, double epsilon, double threshold, double initC, double initN, boolean traj) {
-        this.uniqueTraces = uniqueTraces;
+    public RLAgent(double alpha, double epsilon, double threshold, double initC, double initN, boolean traj) {
         this.ALPHA = alpha;
         this.EPSILON = epsilon;
         this.THRESHOLD = threshold;
@@ -77,78 +73,76 @@ public class RLAgent {
         }
     }
 
-	public boolean createAction() {
-    	if (timeStep++ == 0) {
+    public boolean createAction() {
+        if (timeStep++ == 0) {
             lastTimestep = 0;
-			return true;
-		}
+                return true;
+        }
         int currentStep = timeStep - 1;
         lastQc = Qc;
         lastQn = Qn;
 
-    	if (monitor != null) {
-    	    numTotTraces++;
-    	    if (!uniqueTraces.contains(monitor.traceVal)) {
-     		    uniqueTraces.add(monitor.traceVal);
-    	        reward = 1.0;
-    	    } else {
-        		numDupTraces++;
-    	        reward = 0.0;
-    	    }
-    	    Qc = Qc + ALPHA * (reward - Qc);
-    	} else {
-    	    reward = (double)numDupTraces / numTotTraces;
-    	    Qn = Qn + ALPHA * (reward - Qn);
+        if (monitor != null) {
+            numTotTraces++;
+            if (monitor.node.count == 1) {
+                reward = 1.0;
+            } else {
+                numDupTraces++;
+                reward = 0.0;
+            }
+            Qc = Qc + ALPHA * (reward - Qc);
+        } else {
+            reward = (double)numDupTraces / numTotTraces;
+            Qn = Qn + ALPHA * (reward - Qn);
         }
-		if (traj && lastTimestep >= 0) {
+        if (traj && lastTimestep >= 0) {
             trajectory.add(new Step(true, reward, lastTimestep, lastQc, lastQn));
-		}
+        }
         lastTimestep = currentStep;
         return true;
-	}
+        }
 
     public boolean decideAction() { 
-    	// Initial Action Selection 
-    	if (timeStep++ == 0) {
+        // Initial Action Selection 
+        if (timeStep++ == 0) {
             boolean initAction = (Qn <= Qc);
             lastAction = initAction;
             lastTimestep = 0;
-    	    return initAction;
-    	}
-    	// Learning Converged 
-    	if (converged) {
-    	    return convStatus;
-    	}
+            return initAction;
+        }
+        // Learning Converged 
+        if (converged) {
+            return convStatus;
+        }
 
         int currentStep = timeStep - 1;
         lastQc = Qc;
         lastQn = Qn;
 
         // Reward Update 
-    	if (monitor != null) {
-    	    numTotTraces++;
-    	    if (!uniqueTraces.contains(monitor.traceVal)) {
-     		    uniqueTraces.add(monitor.traceVal);
-    	        reward = 1.0;
-    	    } else {
-        		numDupTraces++;
-    	        reward = 0.0;
-    	    }
-    	    Qc = Qc + ALPHA * (reward - Qc);
-    	} else {
-    	    reward = (double)numDupTraces / numTotTraces;
-    	    Qn = Qn + ALPHA * (reward - Qn);
+        if (monitor != null) {
+            numTotTraces++;
+            if (monitor.node.count == 1) {
+                reward = 1.0;
+            } else {
+                numDupTraces++;
+                reward = 0.0;
+            }
+            Qc = Qc + ALPHA * (reward - Qc);
+        } else {
+            reward = (double)numDupTraces / numTotTraces;
+            Qn = Qn + ALPHA * (reward - Qn);
         }
 
         // Exploration Phase
         boolean action;
         if (!converged && Math.random() < EPSILON) {
-    	    Random random = new Random();
-    	    action = random.nextBoolean();
-    	} else {
-    	    // Exploitation Phase
-    	    action = (Qn <= Qc);
-    	}
+            Random random = new Random();
+            action = random.nextBoolean();
+        } else {
+            // Exploitation Phase
+            action = (Qn <= Qc);
+        }
 
         if (traj && !converged && lastTimestep >= 0) {
             trajectory.add(new Step(lastAction, reward, lastTimestep, lastQc, lastQn));
@@ -164,13 +158,13 @@ public class RLAgent {
 
     public void setMonitor(AbstractMonitor monitor) {
         this.monitor = monitor;
-    	if (converged) {
-    	    monitor.recordEvents = false;
-    	}
+        if (converged) {
+            monitor.recordEvents = false;
+        }
     }
 
     public void clearMonitor() {
-    	this.monitor = null;
+        this.monitor = null;
     }
 
     public String getTrajectoryString() {

@@ -17,6 +17,7 @@ public class TimeSeries {
 
     public static class Node {
         boolean marked = false;
+	    public int count = 0;
         Map<Integer, Node> children = new HashMap<>();
     }
 
@@ -86,11 +87,13 @@ public class TimeSeries {
 
             Node root = locationTrieMap.computeIfAbsent(key, k -> new Node());
             monitor.node = root;
+            monitor.node.count++;
         }
     }
 
     public static void updateMonitor(AbstractMonitor monitor, JoinPoint.StaticPart joinpoint) {
         Node current = monitor.node;
+    	current.count--;
         int eventHash = System.identityHashCode(joinpoint);
 
         Node nextNode = current.children.get(eventHash);
@@ -99,5 +102,6 @@ public class TimeSeries {
             current.children.put(eventHash, nextNode);
         }
         monitor.node = nextNode;
+    	monitor.node.count++;
     }
 }

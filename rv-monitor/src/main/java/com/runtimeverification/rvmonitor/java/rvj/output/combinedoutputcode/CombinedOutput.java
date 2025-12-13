@@ -181,7 +181,6 @@ public class CombinedOutput {
 
             if (!isDisabled) {
                 ret += ("private static HashMap<Integer, RLAgent> " + spec.getName() + "_agents = new HashMap<Integer, RLAgent>();\n");
-        		ret += ("private static HashSet<Integer> " + spec.getName() + "_traces = new HashSet<Integer>();\n");
     	    }
     	}
     	ret += "\n";
