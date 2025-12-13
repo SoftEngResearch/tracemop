@@ -80,13 +80,11 @@ def decide_action(Qc, Qn, alpha, epsilon, time_step):
 
 def simulate_series(series, alpha, epsilon):
     Qc, Qn = INIT_C, INIT_N
-    num_tot, num_dup = 0, 0
-    points = []
-    converged_step = None
-    for t, true_action in enumerate(series):
+    num_tot, num_dup, converged_step, points = 0, 0, None, []
+    for time_step, true_action in enumerate(series):
         if converged_step is not None:
             break
-        action = decide_action(Qc, Qn, alpha, epsilon, t)
+        action = decide_action(Qc, Qn, alpha, epsilon, time_step)
         points.append(1 if action else 0)
         if action:
             num_tot += 1
@@ -97,7 +95,7 @@ def simulate_series(series, alpha, epsilon):
             reward = (num_dup / num_tot) if num_tot > 0 else 0.0
             Qn += alpha * (reward - Qn)
         if abs(1.0 - abs(Qc - Qn)) < DEFAULT_THRESHOLD:
-            converged_step = t + 1
+            converged_step = time_step + 1
     return points, converged_step
 
 def decide_action_ducb(sumC, sumN, countC, countN, time_step, C):
@@ -110,13 +108,11 @@ def decide_action_ducb(sumC, sumN, countC, countN, time_step, C):
 def simulate_series_ducb(series, gamma, C):
     sumC, sumN = INIT_C, INIT_N
     countC, countN = 1.0, 1.0
-    num_tot, num_dup = 0, 0
-    points = []
-    converged_step = None
-    for t, true_action in enumerate(series):
+    num_tot, num_dup, converged_step, points = 0, 0, None, []
+    for time_step, true_action in enumerate(series):
         if converged_step is not None:
             break
-        action = decide_action_ducb(sumC, sumN, countC, countN, t, C)
+        action = decide_action_ducb(sumC, sumN, countC, countN, time_step, C)
         points.append(1 if action else 0)
         if action:
             num_tot += 1
@@ -131,7 +127,7 @@ def simulate_series_ducb(series, gamma, C):
         MuC = sumC / countC
         MuN = sumN / countN
         if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
-            converged_step = t + 1
+            converged_step = time_step + 1
     return points, converged_step
 
 def sample_beta(alpha, beta, rng):
@@ -163,13 +159,11 @@ def simulate_series_dsts(series, gamma):
     rng = random.Random()
     alphaC, alphaN = max(INIT_C, 1.0), max(INIT_N, 1.0)
     betaC, betaN = 1.0, 1.0
-    num_tot, num_dup = 0, 0
-    points = []
-    converged_step = None
-    for t, true_action in enumerate(series):
+    num_tot, num_dup, converged_step, points = 0, 0, None, []
+    for time_step, true_action in enumerate(series):
         if converged_step is not None:
             break
-        if t == 0:
+        if time_step == 0:
             action = alphaN <= alphaC
         else:
             thetaC = sample_beta(alphaC, betaC, rng)
@@ -195,7 +189,7 @@ def simulate_series_dsts(series, gamma):
         MuC = alphaC / (alphaC + betaC)
         MuN = alphaN / (alphaN + betaN)
         if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
-            converged_step = t + 1
+            converged_step = time_step + 1
     return points, converged_step
 
 def build_all_plots(main_series, overlay_map, target_location, output_dir):

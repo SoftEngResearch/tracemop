@@ -53,14 +53,15 @@ def simulate_series(series, alpha, epsilon):
     num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
     for time_step, true_action in enumerate(series):
         if converged:
-            if converged_action and true_action == 1:
-                num_uniq += 1
+            if converged_action:
+                num_uniq += (true_action == 1)
             continue
         else:
             action = decide_action(Qc, Qn, alpha, epsilon, time_step)
         if action:
             num_tot += 1
-            num_uniq, num_dup = num_uniq + (true_action == 1), num_dup + (true_action == 0)
+            num_uniq += (true_action == 1)
+            num_dup += (true_action == 0)
             reward = 1.0 if true_action == 1 else 0.0
             Qc += alpha * (reward - Qc)
         else:
@@ -84,14 +85,15 @@ def simulate_series_ducb(series, gamma, C):
     num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
     for time_step, true_action in enumerate(series):
         if converged:
-            if converged_action and true_action == 1:
-                num_uniq += 1
+            if converged_action:
+                num_uniq += (true_action == 1)
             continue
         else:
             action = decide_action_ducb(sumC, sumN, countC, countN, time_step, C)
         if action:
             num_tot += 1
-            num_uniq, num_dup = num_uniq + (true_action == 1), num_dup + (true_action == 0)
+            num_uniq += (true_action == 1)
+            num_dup += (true_action == 0)
             reward = 1.0 if true_action == 1 else 0.0
             sumC = gamma * sumC + reward
             countC = gamma * countC + 1.0
@@ -138,8 +140,8 @@ def simulate_series_dsts(series, gamma):
     num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
     for time_step, true_action in enumerate(series):
         if converged:
-            if converged_action and true_action == 1:
-                num_uniq += 1
+            if converged_action:
+                num_uniq += (true_action == 1)
             continue
         else:
             if time_step == 0:
@@ -150,7 +152,8 @@ def simulate_series_dsts(series, gamma):
                 action = thetaN <= thetaC
         if action:
             num_tot += 1
-            num_uniq, num_dup = num_uniq + (true_action == 1), num_dup + (true_action == 0)
+            num_uniq += (true_action == 1)
+            num_dup += (true_action == 0)
             reward = 1.0 if true_action == 1 else 0.0
             alphaC += reward
             betaC  += (1 - reward)
@@ -232,12 +235,26 @@ def tune_all_specs(time_series_file, n_trials, algorithm):
     return results
 
 def main():
-    if len(sys.argv) != 4:
-        sys.exit("Usage: python param_tune.py <time_series_file> <n_trials> <algorithm>")
-    time_series_file, n_trials, algorithm = sys.argv[1], int(sys.argv[2]), sys.argv[3].lower()
-    results = tune_all_specs(time_series_file, n_trials, algorithm)
-    with open("tuned_hyperparameters.json", "w") as f:
-        json.dump(results, f, indent=4)
+    projects = {
+        "kiara": "kiara-series/project/time-series",
+        "stringsearchalgorithms": "stringsearchalgorithms-series/project/time-series",
+        "Jaba": "Jaba-series/project/time-series",
+        "btree4j": "btree4j-series/project/time-series",
+        "rtree-multi": "rtree-multi/project/time-series",
+    }
+
+    n_trials = 100
+    algorithms = ["dsts"]
+
+    for project_name, series_file in projects.items():
+        for algo in algorithms:
+            print(f"Tuning hyperparameters for {project_name}, algorithm: {algo}...")
+            results = tune_all_specs(series_file, n_trials, algo)
+            suffix = "" if algo == "default" else f"-{algo}"
+            output_file = f"{project_name}{suffix}-tuned_hyperparameters.json"
+            with open(output_file, "w") as f:
+                json.dump(results, f, indent=4)
+            print(f"Saved results to {output_file}\n")
 
 if __name__ == "__main__":
     main()
