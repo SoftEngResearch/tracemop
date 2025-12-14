@@ -26,7 +26,7 @@ bash install.sh true false true  # This will generate a track-no-stats-agent.jar
 bash install.sh false false true # This will generate a no-track-no-stats-agent.jar with time-series enabled
 ```
 
-An example time-series for a monitor creation location is shown below. In this example, `Collection_UnsafeIterator` monitors are created at `MethodAttributeAppender.java:205`. Among them, the first and the eighth monitors observe unique traces.
+An example time-series for `MethodAttributeAppender.java:205` is shown below, where `Collection_UnsafeIterator` monitors are created. Among the monitors, the first and the eighth observe unique traces.
 ```
 Collection_UnsafeIterator @ MethodAttributeAppender.java:205
  => <0: unique> <1: unique> <2: redundant> <3: redundant> <4: redundant> <5: redundant> <6: redundant> <7: redundant> <8: unique> <9: redundant>
