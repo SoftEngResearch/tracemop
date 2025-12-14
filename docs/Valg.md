@@ -17,7 +17,7 @@ cd scripts
 bash install.sh false false [optional:true|false] -valg
 ```
 
-The optional third argument enables time-series collection (as described in [BuildAgent.md](docs/BuildAgent.md)).
+The optional third argument enables time-series collection (as described in [BuildAgent.md](BuildAgent.md)).
 
 ## Per-Spec Hyperparameter Configuration
 
