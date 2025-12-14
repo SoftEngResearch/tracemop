@@ -23,7 +23,7 @@ The optional third argument enables time-series collection (as described in [Bui
 
 Valg allows different hyperparameter configurations for different specifications. 
 This is controlled using the `-spec` flag. Valg can also disable RL agents for specific specifications using `off`. 
-The syntax is `(-spec <spec-name> ["{<alpha>,<epsilon>,<threshold>,<initial-values>}" | off])*`, where the parameters are:
+The syntax is `(-spec <spec-name> ["{<alpha>,<epsilon>,<threshold>,<initial-values>}" | off])*`, where the hyperparameters are:
 
 - `<alpha>`: learning rate
 - `<epsilon>`: exploration probability
@@ -38,14 +38,14 @@ bash install.sh false false false -spec Iterator_HasNext "{0.5,0.5,0.0001,5.0,5.
 
 ## Trajectory Saving
 Valg can record trajectories that describe how monitor creation decisions evolve over time. 
-Trajectory saving can be enabled using the `-traj` flag. When enabled, TraceMOP generates a trajectories file at `~/project/trajectories`, e.g.,:
+Trajectory saving can be enabled using the `-traj` flag. When enabled, TraceMOP generates a file at `~/project/trajectories`, e.g.,:
 ```
 bash install.sh false false false -spec Iterator_HasNext "{0.5,0.5,0.0001,5.0,5.0}" -traj
 ```
 
-In the example below, the agent creates monitors for the first three time steps, 
-but only the first monitor observes a unique trace, and the agent switches to the `ncreate` action at the time step `t=3`.
+In the example below, the agent at `BasicOperations.java:103` creates `Collection_UnsafeIterator` monitors for the first three time steps. But, only the first monitor observes a unique trace, and the agent switches to the `ncreate` action at the time step `t=3`.
 ```
-<0: A=create, R=1.00, Qc=5.00, Qn=0.00> <1: A=create, R=0.00, Qc=1.40, Qn=0.00> <2: A=create, R=0.00, Qc=0.14, Qn=0.00>
-<3: A=ncreate, R=0.67, Qc=0.01, Qn=0.00> <4: A=ncreate, R=0.67, Qc=0.01, Qn=0.60> ...
+Collection_UnsafeIterator @ BasicOperations.java:103
+=> <0: A=create, R=1.00, Qc=5.00, Qn=0.00> <1: A=create, R=0.00, Qc=1.40, Qn=0.00> <2: A=create, R=0.00, Qc=0.14, Qn=0.00>
+   <3: A=ncreate, R=0.67, Qc=0.01, Qn=0.00> <4: A=ncreate, R=0.67, Qc=0.01, Qn=0.60> ...
 ```
