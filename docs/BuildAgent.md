@@ -17,6 +17,21 @@ cd scripts
 bash install.sh false false  # This will generate a no-track-no-stats-agent.jar
 ```
 
+## Enabling Time-Series Collection
+
+The time-series file records, for each monitor creation location and each time step, whether the monitor observed a unique or redundant trace. Time-series collection can be enabled when building the agent, and TraceMOP generates a file at `~/project/time-series`:
+```bash
+cd scripts
+bash install.sh true false true  # This will generate a track-no-stats-agent.jar with time-series enabled
+bash install.sh false false true # This will generate a no-track-no-stats-agent.jar with time-series enabled
+```
+
+An example time-series for a monitor creation location is shown below. In this example, `Collection_UnsafeIterator` monitors are created at `MethodAttributeAppender.java:205`. Among them, the first and the eighth monitors observe unique traces.
+```
+Collection_UnsafeIterator @ MethodAttributeAppender.java:205
+ => <0: unique> <1: unique> <2: redundant> <3: redundant> <4: redundant> <5: redundant> <6: redundant> <7: redundant> <8: unique> <9: redundant>
+```
+
 If your project uses Maven build system, then you can follow the instructions in [AddAgent.md](AddAgent.md) to add TraceMOP agent to your project.
 
 If your project does not use Maven, your can monitor a Java program using TraceMOP whose main method is in Main.java like so (after compiling Main.java):
