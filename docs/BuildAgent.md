@@ -17,7 +17,7 @@ cd scripts
 bash install.sh false false  # This will generate a no-track-no-stats-agent.jar
 ```
 
-## Enabling Time-Series Collection
+## Enabling time-series collection
 
 The time-series file records, for each monitor creation location and each time step, whether the monitor observed a unique or redundant trace. Time-series collection can be enabled when building the agent, and TraceMOP generates a file at `~/project/time-series`:
 ```bash
