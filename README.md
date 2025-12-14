@@ -180,7 +180,7 @@ Check out the [instructions here](docs/AddPluginToPom.md) for more details.
 
 ## Using TraceMOP's Java agent to monitor Maven and non-Maven projects
 
-You can follow the [instructions here](docs/BuildAgent.md) to learn how to build and use TraceMOP's Java agent.
+You can follow the [instructions here](docs/BuildAgent.md) to learn how to build and use TraceMOP's Java agent. Also, follow the [instructions here](docs/Valg.md) to learn how to enable Valg (i.e., selective monitoring).
 
 ## Output Structure
 
