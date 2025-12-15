@@ -743,7 +743,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                 ifbody.add(decl);
                 monitorref = new CodeVarRefExpr(decl.getVariable());
 
-                if (Main.options.valg || Main.options.traj || Main.options.series) { 
+                if (Main.options.series) { 
                     ifbody.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
                             CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor", 
                             CodeLiteralExpr.string(this.rvmSpec.getName()),
@@ -1136,7 +1136,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
             CodeVariable newAgent = new CodeVariable(new CodeType("RLAgent"), "newAgent"); 
             String trajArg = Main.options.traj ? ", true" : "";
-            CodeExpr newAgentExpr = CodeExpr.fromLegacy(new CodeType("RLAgent"), "new RLAgent(" 
+            CodeExpr newAgentExpr = CodeExpr.fromLegacy(new CodeType("RLAgent"), "new RLAgent(" + this.rvmSpec.getName() + "_traces, " 
                                                         + config.alpha + ", " 
                                                         + config.epsilon + ", " 
                                                         + config.threshold + ", " 
@@ -1216,7 +1216,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             monitorref = create.getDeclaredMonitorRef();
             stmts.add(create);
 
-            if (Main.options.valg || Main.options.traj || Main.options.series) { 
+            if (Main.options.series) { 
                 stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
                         CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor", 
                         CodeLiteralExpr.string(this.rvmSpec.getName()),

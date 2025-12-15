@@ -467,12 +467,12 @@ public class BaseMonitor extends Monitor {
         if (Main.options.valg || Main.options.traj) {
             SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
             if (config != null && !config.disabled) {
-                ret += "if (recordEvents) {\n";
-                ret += "TimeSeries.updateMonitor(this, joinpoint);\n";
+                ret += "if (recordEvents) {\n";	
+				ret += "traceVal = traceVal * BASE + (System.identityHashCode(joinpoint) & 0xffffffffL);\n";
             	ret += "}\n";
             }
         } else if (Main.options.series) {
-            ret += "TimeSeries.updateMonitor(this, joinpoint);\n";
+			ret += "traceVal = traceVal * BASE + (System.identityHashCode(joinpoint) & 0xffffffffL);\n";
         }
         if (retbool)
             ret += "return true;\n";
@@ -805,7 +805,7 @@ public class BaseMonitor extends Monitor {
         }
         if (Main.options.valg || Main.options.traj || Main.options.series) {
             ret += "ret.location = this.location;\n";
-            ret += "ret.node = this.node;\n";
+            ret += "ret.traceVal = this.traceVal;\n";
         }
         if (this.isAtomicMonitorUsed()) {
             ret += "ret.pairValue = new AtomicInteger(pairValue.get());\n";

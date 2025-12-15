@@ -8,11 +8,12 @@ import java.util.List;
 
 public abstract class AbstractMonitor implements IMonitor, RVMObject {
 	public int monitorid = -123;
+	protected static final long BASE = 1315423911L;
 
 	public String location = null;
 	private boolean activated = true;
 
-    public TimeSeries.Node node = null; 
+	public long traceVal = 0L;
     public boolean recordEvents = true;
 
 	/**

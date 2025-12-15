@@ -14,6 +14,7 @@ public class TimeSeries {
     private static final Map<String, List<AbstractMonitor>> map = new HashMap<>();
     private static final Map<String, Node> locationTrieMap = new HashMap<>();
     private static boolean shutdownHookRegistered = false;
+	private static final ReentrantLock lock = new ReentrantLock();
 
     public static class Node {
         boolean marked = false;
@@ -49,14 +50,14 @@ public class TimeSeries {
                     fw.write(" => ");
 
                     List<AbstractMonitor> list = map.get(key);
-
+					Set<Long> seenTraces = new HashSet<>();
+	
                     int index = 0;
                     for (AbstractMonitor monitor : list) {
-                        Node node = monitor.node;
-                        boolean isUnique = !node.marked;
+						long traceVal = monitor.traceVal;
+						boolean isUnique = seenTraces.add(traceVal);
                         if (isUnique) {
                             fw.write("<" + index + ": unique> ");
-                            node.marked = true;
                         } else {
                             fw.write("<" + index + ": redundant> ");
                         }
@@ -74,34 +75,13 @@ public class TimeSeries {
     }
 
     public static void addMonitor(String spec, JoinPoint.StaticPart joinpoint, AbstractMonitor monitor) {
+		lock.lock();
         if (monitor.location == null) {
             monitor.location = spec + " @ " + joinpoint.getSourceLocation().toString();
         }
         String key = monitor.location;
-
-        synchronized (map) {
-            List<AbstractMonitor> list = map.computeIfAbsent(key, k -> new ArrayList<>());
-            list.add(monitor);
-
-            if (monitor.node != null) return;
-
-            Node root = locationTrieMap.computeIfAbsent(key, k -> new Node());
-            monitor.node = root;
-            monitor.node.count++;
-        }
-    }
-
-    public static void updateMonitor(AbstractMonitor monitor, JoinPoint.StaticPart joinpoint) {
-        Node current = monitor.node;
-    	current.count--;
-        int eventHash = System.identityHashCode(joinpoint);
-
-        Node nextNode = current.children.get(eventHash);
-        if (nextNode == null) {
-            nextNode = new Node();
-            current.children.put(eventHash, nextNode);
-        }
-        monitor.node = nextNode;
-    	monitor.node.count++;
+        List<AbstractMonitor> list = map.computeIfAbsent(key, k -> new ArrayList<>());
+        list.add(monitor);
+		lock.unlock();
     }
 }

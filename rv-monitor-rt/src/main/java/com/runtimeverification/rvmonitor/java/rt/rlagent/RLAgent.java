@@ -19,6 +19,7 @@ public class RLAgent {
     private double ALPHA;
 
     private AbstractMonitor monitor = null;
+	private HashSet<Long> uniqueTraces;
 
     private int timeStep = 0;
 
@@ -50,11 +51,14 @@ public class RLAgent {
         }
     }
 
-    public RLAgent(double alpha, double epsilon, double threshold, double initC, double initN) {
-                this(alpha, epsilon, threshold, initC, initN, false);
-        }
+    public RLAgent(HashSet<Long> uniqueTraces, 
+		double alpha, double epsilon, double threshold, double initC, double initN) {
+        this(uniqueTraces, alpha, epsilon, threshold, initC, initN, false);
+    }
 
-    public RLAgent(double alpha, double epsilon, double threshold, double initC, double initN, boolean traj) {
+    public RLAgent(HashSet<Long> uniqueTraces,
+		double alpha, double epsilon, double threshold, double initC, double initN, boolean traj) {
+		this.uniqueTraces = uniqueTraces;
         this.ALPHA = alpha;
         this.EPSILON = epsilon;
         this.THRESHOLD = threshold;
@@ -84,7 +88,8 @@ public class RLAgent {
 
         if (monitor != null) {
             numTotTraces++;
-            if (monitor.node.count == 1) {
+    	    if (!uniqueTraces.contains(monitor.traceVal)) {
+     		    uniqueTraces.add(monitor.traceVal);
                 reward = 1.0;
             } else {
                 numDupTraces++;
@@ -122,7 +127,8 @@ public class RLAgent {
         // Reward Update 
         if (monitor != null) {
             numTotTraces++;
-            if (monitor.node.count == 1) {
+    	    if (!uniqueTraces.contains(monitor.traceVal)) {
+     		    uniqueTraces.add(monitor.traceVal);
                 reward = 1.0;
             } else {
                 numDupTraces++;
