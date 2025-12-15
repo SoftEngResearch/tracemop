@@ -45,6 +45,11 @@ if [[ ${#spec_configs[@]} -gt 0 && "$valg" != true ]]; then
     exit 1
 fi
 
+if [[ "$traj" == true && "$valg" != true ]]; then
+    echo "[install.sh] Error: -traj can only be used when -valg is enabled."
+    exit 1
+fi
+
 function install() {
   if [[ ${TRACK} == true ]]; then
     TRACK="track"

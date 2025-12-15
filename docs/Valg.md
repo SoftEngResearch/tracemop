@@ -38,9 +38,11 @@ bash install.sh false false false -spec Iterator_HasNext "{0.5,0.5,0.0001,5.0,5.
 
 ## Trajectory Saving
 Valg can record trajectories that describe how monitor creation decisions evolve over time. 
-Trajectory saving can be enabled using the `-traj` flag. When enabled, TraceMOP generates a file at `~/project/trajectories`, e.g.,:
+Trajectory saving can be enabled using the `-traj` flag. When enabled, TraceMOP generates a file at `~/project/trajectories`.
+
+Note that trajectory saving is only supported when Valg is enabled. Therefore, the `-traj` flag must be used together with `-valg`; otherwise, the build will fail, e.g.,:
 ```
-bash install.sh false false false -spec Iterator_HasNext "{0.5,0.5,0.0001,5.0,5.0}" -traj
+bash install.sh false false false -valg -spec Iterator_HasNext "{0.5,0.5,0.0001,5.0,5.0}" -traj
 ```
 
 In the example below, the agent at `BasicOperations.java:103` creates `Collection_UnsafeIterator` monitors for the first three time steps. But, only the first monitor observes a unique trace, and the agent switches to the `ncreate` action at the time step `t=3`.
