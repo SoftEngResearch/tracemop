@@ -19,6 +19,7 @@ public class RLAgentDSTS {
     private double GAMMA;
 
     private AbstractMonitor monitor = null;
+    private HashSet<Long> uniqueTraces;
 
     private int timeStep = 0;
 
@@ -54,11 +55,14 @@ public class RLAgentDSTS {
         }
     }
 
-    public RLAgentDSTS(double GAMMA, double THRESHOLD, double initC, double initN) {
-        this(GAMMA, THRESHOLD, initC, initN, false);
+    public RLAgentDSTS(HashSet<Long> uniqueTraces, 
+        double GAMMA, double THRESHOLD, double initC, double initN) {
+        this(uniqueTraces, GAMMA, THRESHOLD, initC, initN, false);
     }
 
-    public RLAgentDSTS(double GAMMA, double THRESHOLD, double initC, double initN, boolean traj) {
+    public RLAgentDSTS(HashSet<Long> uniqueTraces,
+        double GAMMA, double THRESHOLD, double initC, double initN, boolean traj) {
+        this.uniqueTraces = uniqueTraces;
         this.GAMMA = GAMMA;
         this.THRESHOLD = THRESHOLD;
         this.alphaC = Math.max(initC, 1.0);
@@ -92,7 +96,8 @@ public class RLAgentDSTS {
 
         if (monitor != null) {
             numTotTraces++;
-            if (monitor.node.count == 1) {
+    	    if (!uniqueTraces.contains(monitor.traceVal)) {
+     		    uniqueTraces.add(monitor.traceVal);
                 reward = 1.0;
             } else {
                 numDupTraces++;
@@ -142,7 +147,8 @@ public class RLAgentDSTS {
         // Reward Update
         if (monitor != null) {
             numTotTraces++;
-            if (monitor.node.count == 1) {
+    	    if (!uniqueTraces.contains(monitor.traceVal)) {
+     		    uniqueTraces.add(monitor.traceVal);
                 reward = 1.0;
             } else {
                 numDupTraces++;
