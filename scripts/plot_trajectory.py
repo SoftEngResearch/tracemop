@@ -95,6 +95,7 @@ def simulate_series(series, alpha, epsilon):
             reward = (num_dup / num_tot) if num_tot > 0 else 0.0
             Qn += alpha * (reward - Qn)
         if abs(1.0 - abs(Qc - Qn)) < DEFAULT_THRESHOLD:
+            points.append(Qn <= Qc)
             converged_step = time_step + 1
     return points, converged_step
 
@@ -127,6 +128,7 @@ def simulate_series_ducb(series, gamma, C):
         MuC = sumC / countC
         MuN = sumN / countN
         if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
+            points.append(MuN <= MuC)
             converged_step = time_step + 1
     return points, converged_step
 
@@ -190,6 +192,7 @@ def simulate_series_dsts(series, gamma):
         MuC = alphaC / (alphaC + betaC)
         MuN = alphaN / (alphaN + betaN)
         if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
+            points.append(MuN <= MuC)
             converged_step = time_step + 1
     return points, converged_step
 
