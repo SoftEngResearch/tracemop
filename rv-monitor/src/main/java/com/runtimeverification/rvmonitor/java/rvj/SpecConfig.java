@@ -9,6 +9,16 @@ public class SpecConfig {
     public double initc = 5.0;
     public double initn = 0.0;
 
+    public SpecConfig(double alpha, double epsilon, double threshold, double initc, double initn) {
+        this.alpha = alpha;
+        this.epsilon = epsilon;
+        this.threshold = threshold;
+        this.initc = initc;
+        this.initn = initn;
+    }
+
+    public SpecConfig() {}
+
     @Override
     public String toString() {
         if (disabled) {
@@ -18,3 +28,4 @@ public class SpecConfig {
         }
     }
 }
+

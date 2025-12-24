@@ -9,6 +9,7 @@ SERIES=${3:-false}
 shift 3
 
 valg=false
+valg_value=""
 traj=false
 spec_configs=()
 
@@ -17,7 +18,17 @@ while [[ $# -gt 0 ]]; do
   case $key in
     -valg)
       valg=true
-      shift 1
+      if [[ $# -ge 2 && "$2" != -* ]]; then
+        if [[ "$2" =~ ^\{[0-9.+-]+(,[0-9.+-]+){4}\}$ ]]; then
+          valg_value="$2"
+          shift 2
+        else 
+          echo "[install.sh] Error: -valg value must be in the format \"{<alpha>,<epsilon>,<threshold>,<initial values>}\""
+          exit 1
+        fi
+      else
+        shift 1
+      fi
       ;;
     -traj)
       traj=true
@@ -81,8 +92,8 @@ function install() {
   if [[ ${TRACK} == "track" ]]; then
     props="props-track"
   fi
-
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} ${SERIES} true ${valg} ${traj} "${spec_configs[@]}"
+ 
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} ${SERIES} true ${valg} ${valg_value} ${traj} "${spec_configs[@]}"
 
   if [[ ${TRACK} == "track" ]]; then
     # Add aspect

@@ -125,6 +125,9 @@ public class RVMOptions {
     @Parameter(names={"-valg"},description = "Enable Valg agents")
     public boolean valg;
 
+    @Parameter(names = "-default", description = "Default hyperparameters for all specs", converter = DefaultConfigConverter.class)
+    public SpecConfig valgDefault;
+
     @Parameter(names = {"-traj"}, description = "Enable trajectory saving for Valg agents")
     public boolean traj = false;
     

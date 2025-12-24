@@ -146,11 +146,22 @@ public class Main {
 
     	for (String specName : specNames) {
     	    if (!configuredNames.contains(specName)) {
-    	        SpecConfig defaultConfig = new SpecConfig();
-    		defaultConfig.name = specName;
-    		defaultConfig.disabled = false;
-    		options.specConfigs.add(defaultConfig);
-            options.specConfigMap.put(specName, defaultConfig);
+    	        SpecConfig defaultConfig;
+                if (options.valgDefault != null) {
+                    defaultConfig = new SpecConfig(
+                        options.valgDefault.alpha,
+                        options.valgDefault.epsilon,
+                        options.valgDefault.threshold,
+                        options.valgDefault.initc,
+                        options.valgDefault.initn
+                    );
+                } else {
+                    defaultConfig = new SpecConfig();
+                }
+        		defaultConfig.name = specName;
+        		defaultConfig.disabled = false;
+        		options.specConfigs.add(defaultConfig);
+                options.specConfigMap.put(specName, defaultConfig);
     	    }
     	}
 

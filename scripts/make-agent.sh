@@ -22,8 +22,15 @@ stats=$8
 series_enabled=$9
 violation_from_ajc=${10}
 valg=${11}
-traj=${12}
-shift 12
+shift 11
+
+valg_value=""
+if [[ $# -gt 0 && "$1" =~ ^\{[0-9.+-]+(,[0-9.+-]+){4}\}$ ]]; then
+    valg_value="$1"
+    shift
+fi
+traj="$1"
+shift
 
 spec_args=()
 while [[ $# -gt 0 ]]; do
@@ -71,6 +78,9 @@ function build_agent() {
 
     if [[ "$valg" == "true" ]]; then
         rv_monitor_flag+=("-valg")
+        if [[ -n "$valg_value" ]]; then
+            rv_monitor_flag+=("-default" "$valg_value")
+        fi
     fi    
     
     if [[ "$traj" == "true" ]]; then
