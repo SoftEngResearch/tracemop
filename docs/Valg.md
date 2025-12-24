@@ -33,7 +33,7 @@ The syntax is `(-spec <spec-name> ["{<alpha>,<epsilon>,<threshold>,<initial-valu
 In the example below, Valg is enabled for `Iterator_HasNext` with custom hyperparameters 
 and is disabled for `ArrayDeque_NonNull`, which uses standard monitoring:
 ```
-bash install.sh false false false -spec Iterator_HasNext "{0.5,0.5,0.0001,5.0,5.0}" -spec ArrayDeque_NonNull off
+bash install.sh false false false -valg -spec Iterator_HasNext "{0.5,0.5,0.0001,5.0,5.0}" -spec ArrayDeque_NonNull off
 ```
 
 ## Trajectory Saving
