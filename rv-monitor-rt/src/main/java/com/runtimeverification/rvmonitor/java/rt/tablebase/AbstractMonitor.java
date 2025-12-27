@@ -14,6 +14,7 @@ public abstract class AbstractMonitor implements IMonitor, RVMObject {
 	private boolean activated = true;
 
 	public long traceVal = 0L;
+    public long creation_time = 0L;
     public boolean recordEvents = true;
 
 	/**

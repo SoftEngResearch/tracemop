@@ -747,6 +747,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                     ifbody.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
                             CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor", 
                             CodeLiteralExpr.string(this.rvmSpec.getName()),
+                            // CodeExpr.fromLegacy(CodeType.integer(),"(int) Thread.currentThread().getId()"),
                             new CodeVarRefExpr(new CodeVariable(CodeType.object(), "joinpoint")), monitorref))); 
                 }
                 MonitorWeakRefSetLazyCode weakrefset = new MonitorWeakRefSetLazyCode(
@@ -1218,8 +1219,9 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
 
             if (Main.options.series) { 
                 stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
-                        CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor", 
+                        CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor",
                         CodeLiteralExpr.string(this.rvmSpec.getName()),
+                        // CodeExpr.fromLegacy(CodeType.integer(),"(int) Thread.currentThread().getId()"),
                         new CodeVarRefExpr(new CodeVariable(CodeType.object(), "joinpoint")), monitorref))); 
             }
             this.getMonitorFeatures().addRelatedEvent(this);
