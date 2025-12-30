@@ -59,6 +59,7 @@ public class TimeSeriesThread {
 
             try (FileWriter fw = new FileWriter(file)) {
                 Map<String, Map<Long, Long>> earliestPerBaseLocation = new HashMap<>();
+                Map<String, Set<Integer>> threadsPerBaseLocation = new HashMap<>();
 
                 for (Map.Entry<String, Integer> locEntry : locations) {
                     String location = locEntry.getKey();
@@ -67,6 +68,17 @@ public class TimeSeriesThread {
                     String baseLocation = location.replaceAll("\\s*\\[T\\d+\\]$", "");
                     Map<Long, Long> earliest =
                             earliestPerBaseLocation.computeIfAbsent(baseLocation, k -> new HashMap<>());
+
+                    int threadId = -1;
+                    int idx = location.lastIndexOf("[T");
+                    if (idx != -1 && location.endsWith("]")) {
+                        threadId = Integer.parseInt(
+                                location.substring(idx + 2, location.length() - 1)
+                        );
+                    }
+                    threadsPerBaseLocation
+                            .computeIfAbsent(baseLocation, k -> new HashSet<>())
+                            .add(threadId);
 
                     List<AbstractMonitor> list = monitorMap.get(id);
                     if (list == null) continue;
@@ -81,10 +93,15 @@ public class TimeSeriesThread {
                 for (Map.Entry<String, Integer> locEntry : locations) {
                     String location = locEntry.getKey();
                     Integer id = locEntry.getValue();
-                    fw.write(location + System.lineSeparator());
-                    fw.write(" => ");
 
                     String baseLocation = location.replaceAll("\\s*\\[T\\d+\\]$", "");
+
+                    if (threadsPerBaseLocation.getOrDefault(baseLocation, Collections.emptySet()).size() == 1) {
+                        fw.write(baseLocation + System.lineSeparator());
+                    } else {
+                        fw.write(location + System.lineSeparator());
+                    }
+                    fw.write(" => ");
                     Map<Long, Long> earliest = earliestPerBaseLocation.get(baseLocation);
 
                     List<AbstractMonitor> list = monitorMap.get(id);
