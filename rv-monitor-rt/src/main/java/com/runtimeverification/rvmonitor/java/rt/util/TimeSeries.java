@@ -60,7 +60,36 @@ public class TimeSeries {
                             boolean isUnique = seenTraces.add(traceVal);
                             uniqueness.add(isUnique ? 1 : 0);
                         }
-                        fw.write(uniqueness.toString());
+                        StringBuilder compressed = new StringBuilder();
+                        compressed.append("[");
+
+                        if (!uniqueness.isEmpty()) {
+                            int prev = uniqueness.get(0);
+                            int count = 1;
+
+                            for (int i = 1; i < uniqueness.size(); i++) {
+                                int curr = uniqueness.get(i);
+                                if (curr == prev) {
+                                    count++;
+                                } else {
+                                    if (count > 1) {
+                                        compressed.append(prev).append("x").append(count);
+                                    } else {
+                                        compressed.append(prev);
+                                    }
+                                    compressed.append(", ");
+                                    prev = curr;
+                                    count = 1;
+                                }
+                            }
+                            if (count > 1) {
+                                compressed.append(prev).append("x").append(count);
+                            } else {
+                                compressed.append(prev);
+                            }
+                        }
+                        compressed.append("]");
+                        fw.write(compressed.toString());
                     }
                     fw.write(System.lineSeparator());
                     fw.write(System.lineSeparator());
