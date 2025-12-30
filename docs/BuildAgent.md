@@ -26,10 +26,10 @@ bash install.sh true false true  # This will generate a track-no-stats-agent.jar
 bash install.sh false false true # This will generate a no-track-no-stats-agent.jar with time-series enabled
 ```
 
-An example time-series for `MethodAttributeAppender.java:205` is shown below, where `Collection_UnsafeIterator` monitors are created. Among the monitors, the first and the eighth observe unique traces.
+An example time-series for `Automaton.java:408` is shown below, where `Collection_UnsafeIterator` monitors are created. The monitors created at the time steps 1, 2, 4, 5, and 16 observed a unique trace (check the indices with the value of 1).
 ```
-Collection_UnsafeIterator @ MethodAttributeAppender.java:205
- => <0: unique> <1: unique> <2: redundant> <3: redundant> <4: redundant> <5: redundant> <6: redundant> <7: redundant> <8: unique> <9: redundant>
+Collection_UnsafeIterator @ Automaton.java:408
+ => [1x2, 0, 1x2, 0x10, 1, 0x161023]
 ```
 
 If your project uses Maven build system, then you can follow the instructions in [AddAgent.md](AddAgent.md) to add TraceMOP agent to your project.
