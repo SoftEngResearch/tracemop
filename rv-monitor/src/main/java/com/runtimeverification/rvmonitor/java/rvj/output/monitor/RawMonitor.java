@@ -193,7 +193,10 @@ public class RawMonitor extends Monitor {
         // ret += monitorVar + "." + this.loc + " = " +
         // "Thread.currentThread().getStackTrace()[2].toString()"
         // + ";\n";
-        // }
+        // i
+		if (!inMonitorSet) {
+		    ret += monitorVar + ".violated = false;\n";
+		}
         ret += monitorVar + ".event_" + event.getId() + "(";
         {
             if (Main.options.internalBehaviorObserving || Main.options.locationFromAjc) {
@@ -212,7 +215,11 @@ public class RawMonitor extends Monitor {
             }
         }
         ret += ");\n";
-
+		if (!inMonitorSet) {
+		    ret += "\nif (" + monitorVar + ".violated) {\n";
+		    ret += "return false;\n";
+		    ret += "}\n";
+		}
         return ret;
     }
 
