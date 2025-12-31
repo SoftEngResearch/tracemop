@@ -196,6 +196,23 @@ public class RLAgentDSTS {
 
     public String getTrajectoryString() {
         if (!traj || trajectory == null) return "";
+
+        if (!converged) {
+            double stepMuC = alphaC / (alphaC + betaC);
+            double stepMuN = alphaN / (alphaN + betaN);
+            double stepReward;
+
+            if (monitor != null) {
+                if (!uniqueTraces.contains(monitor.traceVal)) {
+                    stepReward = 1.0;
+                } else {
+                    stepReward = 0.0;
+                }
+            } else {
+                stepReward = (double)numDupTraces / numTotTraces;
+            }
+            trajectory.add(new Step(lastAction, stepReward, lastTimestep, stepMuC, stepMuN));
+        }
         StringBuilder sb = new StringBuilder();
         for (Step s : trajectory) {
             sb.append("<")

@@ -49,25 +49,35 @@ public class RLAgentStore {
             shutdownHookRegistered = true;
         }
     }
-
     private static void writeAllTrajectories() {
         File file = new File(System.getProperty("user.dir") + File.separator + "trajectories");
 
-        entries.sort(Comparator
+        int lastWrittenIndex = 0;
+        while (true) {
+            List<Entry> snapshot;
+            synchronized (entries) {
+                if (lastWrittenIndex >= entries.size()) {
+                    break;
+                }
+                snapshot = new ArrayList<>(entries.subList(lastWrittenIndex, entries.size()));
+            }
+            snapshot.sort(Comparator
                 .comparing((Entry e) -> e.specName)
                 .thenComparing(Entry::getFileName)
                 .thenComparingInt(Entry::getLine));
 
-        try (FileWriter fw = new FileWriter(file, true)) {
-            for (Entry entry : entries) {
-                String location = entry.getLocationString();
-                String trajectory = entry.agent.getTrajectoryString();
-                if (!trajectory.isEmpty()) {
-                    fw.write(entry.specName + " @ " + location + "\n => " + trajectory + "\n\n");
+            try (FileWriter fw = new FileWriter(file, true)) {
+                for (Entry entry : snapshot) {
+                    String location = entry.getLocationString();
+                    String trajectory = entry.agent.getTrajectoryString();
+                    if (!trajectory.isEmpty()) {
+                        fw.write(entry.specName + " @ " + location + "\n => " + trajectory + "\n\n");
+                    }
                 }
+                lastWrittenIndex += snapshot.size();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

@@ -79,8 +79,8 @@ public class RLAgent {
 
     public boolean createAction() {
         if (timeStep++ == 0) {
-            lastTimestep = 0;
-                return true;
+            lastTimestep = 0;                
+            return true;
         }
         int currentStep = timeStep - 1;
         lastQc = Qc;
@@ -105,7 +105,7 @@ public class RLAgent {
         }
         lastTimestep = currentStep;
         return true;
-        }
+    }
 
     public boolean decideAction() { 
         // Initial Action Selection 
@@ -177,7 +177,19 @@ public class RLAgent {
         if (!traj || trajectory == null) {
             return "";
         }
-
+        if (!converged) {
+            double stepReward;
+            if (monitor != null) {
+                if (!uniqueTraces.contains(monitor.traceVal)) {
+                    stepReward = 1.0;
+                } else {
+                    stepReward = 0.0;
+                }
+            } else {
+                stepReward = (double)numDupTraces / numTotTraces;
+            }
+            trajectory.add(new Step(lastAction, stepReward, lastTimestep, Qc, Qn));
+        }
         StringBuilder sb = new StringBuilder();
         for (Step step : trajectory) {
             String actionStr = step.action ? "create" : "ncreate";
@@ -193,11 +205,9 @@ public class RLAgent {
               .append(String.format("%.2f", step.Qn))
               .append("> ");
         }
-
         if (converged) {
             sb.append("[converged]");
         }
-
         return sb.toString().trim();
     }
 
