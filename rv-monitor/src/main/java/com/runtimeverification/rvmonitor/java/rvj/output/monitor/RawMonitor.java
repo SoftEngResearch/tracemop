@@ -195,7 +195,9 @@ public class RawMonitor extends Monitor {
         // + ";\n";
         // i
 		if (!inMonitorSet) {
-		    ret += monitorVar + ".violated = false;\n";
+            if (Main.options.valg || Main.options.traj) { 
+    		    ret += monitorVar + ".violated = false;\n";
+            }
 		}
         ret += monitorVar + ".event_" + event.getId() + "(";
         {
@@ -216,9 +218,11 @@ public class RawMonitor extends Monitor {
         }
         ret += ");\n";
 		if (!inMonitorSet) {
-		    ret += "\nif (" + monitorVar + ".violated) {\n";
-		    ret += "return false;\n";
-		    ret += "}\n";
+            if (Main.options.valg || Main.options.traj) { 
+    		    ret += "\nif (" + monitorVar + ".violated) {\n";
+    		    ret += "return false;\n";
+    		    ret += "}\n";
+            }
 		}
         return ret;
     }
