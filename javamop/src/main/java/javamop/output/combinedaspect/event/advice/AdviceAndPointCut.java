@@ -441,13 +441,13 @@ public class AdviceAndPointCut {
         	    ret += "if (!retValue) {\n";
         	    if (!JavaMOPMain.options.internalBehaviorObserving) {
         	        ret += "int locHash = (int) Thread.currentThread().getId() + System.identityHashCode(thisJoinPointStaticPart.getSourceLocation());\n";
-        		ret += "if (!locIdMap.containsKey(locHash)) {\n";
-        		ret += "locIdMap.put(locHash, new LinkedList<Integer>());\n";
-        		ret += "}\n";
-        		ret += "LinkedList<Integer> locIds = locIdMap.get(locHash);\n";
-        		ret += "if (locIds.size() > MAX_CAPACITY) {\n";
-        		ret += "objIds.remove(locIds.removeFirst());\n";
-        		ret += "}\n";
+            		ret += "if (!locIdMap.containsKey(locHash)) {\n";
+            		ret += "locIdMap.put(locHash, new LinkedList<Integer>());\n";
+            		ret += "}\n";
+            		ret += "LinkedList<Integer> locIds = locIdMap.get(locHash);\n";
+            		ret += "if (locIds.size() > MAX_CAPACITY) {\n";
+            		ret += "objIds.remove(locIds.removeFirst());\n";
+            		ret += "}\n";
         	    }
         	    ret += "objIds.add(objHash);\n";
         	    if (!JavaMOPMain.options.internalBehaviorObserving) {

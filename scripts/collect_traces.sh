@@ -176,6 +176,12 @@ function process() {
   if [[ ${num_db} -eq 1 ]]; then
     # if we only have one all-traces-*, then rename it to all-traces
     mv ${OUTPUT_DIR}/${db} ${TRACEDB_PATH}
+  elif [[ ${num_db} -eq 0 ]]; then
+    empty_db=$(ls -d ${OUTPUT_DIR}/all-traces-* 2>/dev/null)
+
+    if [[ -n "${empty_db}" && -d "${empty_db}" && -z "$(ls -A "${empty_db}")" ]]; then
+      rm -rf "${empty_db}"
+    fi
   fi
 }
 

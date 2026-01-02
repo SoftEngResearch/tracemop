@@ -90,6 +90,11 @@ public class TraceDatabase implements TraceDB {
     }
 
     @Override
+    public List<String> computeTimeSeries(List<String> monitors) {
+        return database.computeTimeSeries(monitors);
+    }
+
+    @Override
     public void createTable() {
         database.createTable();
     }

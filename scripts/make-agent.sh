@@ -19,7 +19,7 @@ trace_dir=$5
 agent_name=$6
 db_conf=$7
 stats=$8
-series_enabled=$9
+series=$9
 violation_from_ajc=${10}
 valg=${11}
 shift 11
@@ -72,8 +72,11 @@ function build_agent() {
         rv_monitor_flag+=("-locationFromAjc")
     fi
   
-    if [[ "$series_enabled" == "true" ]]; then
-        rv_monitor_flag+=("-series") 
+    if [[ "$series" == "true" ]]; then
+        rv_monitor_flag+=("-series")
+        if [[ "${track}" != "track" ]]; then
+            rv_monitor_flag+=("-internalBehaviorObserving" "-trackEventLocations" "-artifactsDir" "$trace_dir" "-dbConfigFile" "$db_conf")
+        fi
     fi
 
     if [[ "$valg" == "true" ]]; then

@@ -189,9 +189,15 @@ public class RuntimeServiceManager implements ICodeGenerator {
             tracerStatements = getTraceCollectionStatements(fileType, writer, "AllMonitorTraceCollector");
         }
 
+        CodeStmtCollection tsStatements = new CodeStmtCollection();
+        if (Main.options.series) {
+            tsStatements = getTimeSeriesCollectionStatements(fileType, writer);
+        }
+
         CodeStmtCollection tryBlock = new CodeStmtCollection();
         tryBlock.add(dumperStatements);
         tryBlock.add(tracerStatements);
+        tryBlock.add(tsStatements);
         return tryBlock;
     }
 
@@ -239,6 +245,40 @@ public class RuntimeServiceManager implements ICodeGenerator {
         return dumperStatements;
     }
 
+    private CodeStmtCollection getTimeSeriesCollectionStatements(CodeType fileType, CodeType writer) {
+        CodeStmtCollection timeSeriesStatements = new CodeStmtCollection();
+
+        CodeVariable timeSeriesWriterVar = new CodeVariable(writer, "timeSeriesWriter");
+        CodeVarDeclStmt createTimeSeriesWriter = new CodeVarDeclStmt(timeSeriesWriterVar, 
+            new CodeNewExpr(writer, new CodeNewExpr(fileType, CodeLiteralExpr.fromLegacy(CodeType.string(),
+                "System.getenv(\"TRACEDB_PATH\") + \"/../project/time-series\""))));
+
+        CodeType collectorType = new CodeType("TimeSeriesCollector");
+        CodeVariable collectorVar = new CodeVariable(collectorType, "timeSeriesCollector");
+        List<CodeExpr> args = new ArrayList<>();
+        args.add(new CodeVarRefExpr(timeSeriesWriterVar));
+        args.add(getDBRelatedFile("tracedb"));
+        args.add(
+            CodeLiteralExpr.fromLegacy(CodeType.string(),
+                "System.getenv(\"TRACEDB_CONFIG_PATH\") == null ? \"" + TraceUtil.dbConf.getAbsolutePath() + "\" : " +
+                "System.getenv(\"TRACEDB_CONFIG_PATH\")"
+            )
+        );
+        CodeVarDeclStmt createCollector = new CodeVarDeclStmt(
+            collectorVar,
+            new CodeNewExpr(collectorType, args)
+        );
+        CodeExprStmt subscribeCollector = new CodeExprStmt(
+            new CodeMethodInvokeExpr(null, null, "subscribe", new CodeVarRefExpr(collectorVar))
+        );
+
+        timeSeriesStatements.add(createTimeSeriesWriter);
+        timeSeriesStatements.add(createCollector);
+        timeSeriesStatements.add(subscribeCollector);
+
+        return timeSeriesStatements;
+    }
+
     private CodeExpr getDBRelatedFile(String filename) {
         // System.getenv("TRACEDB_PATH") == null ? "path/filename.txt" : System.getenv("TRACEDB_PATH") + File.separator + "filename.txt"
         return CodeLiteralExpr.fromLegacy(CodeType.string(),
@@ -268,11 +308,11 @@ public class RuntimeServiceManager implements ICodeGenerator {
             CodeExpr invoke = new CodeMethodInvokeExpr(CodeType.foid(), type,
                     null, "enableFineGrainedLock", enabled);
             init.add(new CodeExprStmt(invoke));
-            if (Main.options.series) {
-                CodeExpr invoke2 = new CodeMethodInvokeExpr(CodeType.foid(), 
-                    CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "registerShutdownHook");
-                init.add(new CodeExprStmt(invoke2));
-            }
+            // if (Main.options.series) {
+            //     CodeExpr invoke2 = new CodeMethodInvokeExpr(CodeType.foid(), 
+            //         CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "registerShutdownHook");
+            //     init.add(new CodeExprStmt(invoke2));
+            // }
         }
 
         return new ServiceDefinition(desc, null, null, init);

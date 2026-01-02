@@ -386,6 +386,48 @@ public class TraceDBTrie implements TraceDB {
         }
     }
 
+    @Override
+    public List<String> computeTimeSeries(List<String> orderedMonitorIds) {
+        lock.lock();
+        try {
+            List<String> compressedSeries = new ArrayList<>();
+            if (orderedMonitorIds.isEmpty()) {
+                return compressedSeries;
+            }
+            EventNode firstNode = monitorsMap.get(orderedMonitorIds.get(0));
+            int prev = !firstNode.visited ? 1 : 0;
+            firstNode.visited = true;
+            int count = 1;
+
+            for (int i = 1; i < orderedMonitorIds.size(); i++) {
+                String monitorId = orderedMonitorIds.get(i);
+                EventNode node = monitorsMap.get(monitorId);
+                int curr = !node.visited ? 1 : 0;
+                node.visited = true;
+
+                if (curr == prev) {
+                    count++;
+                } else {
+                    if (count > 1) {
+                        compressedSeries.add(prev + "x" + count);
+                    } else {
+                        compressedSeries.add(String.valueOf(prev));
+                    }
+                    prev = curr;
+                    count = 1;
+                }
+            }
+            if (count > 1) {
+                compressedSeries.add(prev + "x" + count);
+            } else {
+                compressedSeries.add(String.valueOf(prev));
+            }
+            return compressedSeries;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     private void printError(String message) {
         try {
             FileWriter fileWriter = new FileWriter(System.getenv("TRACEDB_PATH") + TraceDatabase.getInstance().randomFileName + File.separator +

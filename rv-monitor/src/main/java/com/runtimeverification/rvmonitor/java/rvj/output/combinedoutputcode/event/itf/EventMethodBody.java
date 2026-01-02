@@ -745,10 +745,9 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
 
                 if (Main.options.series) { 
                     ifbody.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
-                            CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor", 
-                            CodeLiteralExpr.string(this.rvmSpec.getName()),
-                            // CodeExpr.fromLegacy(CodeType.integer(),"(int) Thread.currentThread().getId()"),
-                            new CodeVarRefExpr(new CodeVariable(CodeType.object(), "joinpoint")), monitorref))); 
+                            CodeExpr.fromLegacy(CodeType.klass(), "TimeSeriesCollector"), "addMonitor", 
+                            CodeExpr.fromLegacy(CodeType.string(), "created.specName + \" @ \" + joinpoint.getSourceLocation().toString()"),
+                            CodeExpr.fromLegacy(CodeType.string(), "created.specName + \"#\" + created.monitorid"))));
                 }
                 MonitorWeakRefSetLazyCode weakrefset = new MonitorWeakRefSetLazyCode(
                         this.getMonitorFeatures(), sourceprms, targetprms,
@@ -1219,10 +1218,9 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
 
             if (Main.options.series) { 
                 stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
-                        CodeExpr.fromLegacy(CodeType.klass(), "TimeSeries"), "addMonitor",
-                        CodeLiteralExpr.string(this.rvmSpec.getName()),
-                        // CodeExpr.fromLegacy(CodeType.integer(),"(int) Thread.currentThread().getId()"),
-                        new CodeVarRefExpr(new CodeVariable(CodeType.object(), "joinpoint")), monitorref))); 
+                        CodeExpr.fromLegacy(CodeType.klass(), "TimeSeriesCollector"), "addMonitor", 
+                        CodeExpr.fromLegacy(CodeType.string(), "created.specName + \" @ \" + joinpoint.getSourceLocation().toString()"),
+                        CodeExpr.fromLegacy(CodeType.string(), "created.specName + \"#\" + created.monitorid"))));
             }
             this.getMonitorFeatures().addRelatedEvent(this);
         }

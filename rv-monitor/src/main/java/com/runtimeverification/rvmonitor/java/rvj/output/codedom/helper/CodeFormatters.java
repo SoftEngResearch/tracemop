@@ -58,8 +58,8 @@ class JavaCodeFormatter implements ICodeFormatter {
         for (String l : this.lines) {
             String fixed = l;
             fixed = fixed.replaceAll("RLAgentStore\\s+\\.add", "RLAgentStore.add");
-            fixed = fixed.replaceAll("TimeSeries\\s+\\.add", "TimeSeries.add");
-            fixed = fixed.replaceAll("TimeSeries\\s+\\.registerShutdownHook", "TimeSeries.registerShutdownHook");
+            fixed = fixed.replaceAll("TimeSeriesCollector\\s+\\.add", "TimeSeriesCollector.add");
+            // fixed = fixed.replaceAll("TimeSeries\\s+\\.registerShutdownHook", "TimeSeries.registerShutdownHook");
             s.append(fixed).append('\n');
         }
         if (this.line.length() > 0)

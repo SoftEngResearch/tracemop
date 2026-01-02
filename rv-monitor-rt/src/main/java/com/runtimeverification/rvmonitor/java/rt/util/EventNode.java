@@ -7,6 +7,7 @@ public class EventNode {
     public String event;
     public Set<String> monitors = null; // only used during traces collection process
     public HashMap<String, EventNode> children = new HashMap<>();
+    public boolean visited = false;
 
     public EventNode(String event) {
         this.event = event;

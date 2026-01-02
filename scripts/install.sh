@@ -89,13 +89,15 @@ function install() {
   export PATH=${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/bin:${SCRIPT_DIR}/../javamop/target/release/javamop/javamop/bin:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor-rt.jar:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor.jar:${PATH}
   export CLASSPATH=${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor-rt.jar:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor.jar:${CLASSPATH}
   local props="props"
-  if [[ ${TRACK} == "track" ]]; then
+  local agent="no-track-no-stats-agent"
+  if [[ ${TRACK} == "track" || ${SERIES} == true ]]; then
     props="props-track"
+    agent="track-no-stats-agent"
   fi
  
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${TRACK}-${STATS}-agent . ${STATS} ${SERIES} true ${valg} ${valg_value} ${traj} "${spec_configs[@]}"
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${agent} . ${STATS} ${SERIES} true ${valg} ${valg_value} ${traj} "${spec_configs[@]}"
 
-  if [[ ${TRACK} == "track" ]]; then
+  if [[ ${TRACK} == "track" || ${SERIES} == true ]]; then
     # Add aspect
     pushd resources &> /dev/null
     mkdir -p mop

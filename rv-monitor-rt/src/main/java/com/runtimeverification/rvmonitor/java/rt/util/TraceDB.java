@@ -2,6 +2,7 @@ package com.runtimeverification.rvmonitor.java.rt.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 public interface TraceDB {
 
@@ -20,6 +21,8 @@ public interface TraceDB {
     default void setCurrentTest(String test) {}
 
     default List<String> get(String monitorID) { return null; }
+
+    default List<String> computeTimeSeries(List<String> monitors) { return Collections.emptyList(); }
 
     void createTable();
 
