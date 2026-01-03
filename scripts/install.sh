@@ -6,7 +6,11 @@ TRACK=${1:-false}
 STATS=${2:-false}
 SERIES=${3:-false}
 
-shift 3
+if [[ $# -ge 3 ]]; then
+  shift 3
+else
+  shift $#
+fi
 
 valg=false
 valg_value=""
