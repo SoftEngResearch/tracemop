@@ -387,20 +387,20 @@ public class TraceDBTrie implements TraceDB {
     }
 
     @Override
-    public List<String> computeTimeSeries(List<String> orderedMonitorIds) {
+    public List<String> computeTimeSeries(String specName, List<Integer> orderedMonitorIds) {
         lock.lock();
         try {
             List<String> compressedSeries = new ArrayList<>();
             if (orderedMonitorIds.isEmpty()) {
                 return compressedSeries;
             }
-            EventNode firstNode = monitorsMap.get(orderedMonitorIds.get(0));
+            EventNode firstNode = monitorsMap.get(specName + "#" + String.valueOf(orderedMonitorIds.get(0)));
             int prev = !firstNode.visited ? 1 : 0;
             firstNode.visited = true;
             int count = 1;
 
             for (int i = 1; i < orderedMonitorIds.size(); i++) {
-                String monitorId = orderedMonitorIds.get(i);
+                String monitorId = specName + "#" + String.valueOf(orderedMonitorIds.get(i));
                 EventNode node = monitorsMap.get(monitorId);
                 int curr = !node.visited ? 1 : 0;
                 node.visited = true;

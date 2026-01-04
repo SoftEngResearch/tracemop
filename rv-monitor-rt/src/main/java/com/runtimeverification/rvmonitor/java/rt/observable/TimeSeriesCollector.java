@@ -9,7 +9,7 @@ import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
 
 public class TimeSeriesCollector extends MonitorTraceCollector {
 
-    private static final Map<Integer, List<String>> locationToMonitorIds = new HashMap<>();
+    private static final Map<Integer, List<Integer>> locationToMonitorIds = new HashMap<>();
     private static final Map<String, Integer> locationToId = new HashMap<>();
     private static int nextId = 0;
     private static final ReentrantLock lock = new ReentrantLock();
@@ -18,11 +18,11 @@ public class TimeSeriesCollector extends MonitorTraceCollector {
         super(writer, dbPath, dbConfPath);
     }
 
-    public static void addMonitor(String location, String monitorID) {
+    public static void addMonitor(String location, int monitorID) {
         lock.lock();
         try {
             Integer id = locationToId.computeIfAbsent(location, k -> nextId++);
-            List<String> list = locationToMonitorIds.computeIfAbsent(id, k -> new ArrayList<>());
+            List<Integer> list = locationToMonitorIds.computeIfAbsent(id, k -> new ArrayList<>());
             list.add(monitorID);
         } finally {
             lock.unlock();
@@ -76,10 +76,11 @@ public class TimeSeriesCollector extends MonitorTraceCollector {
                 writer.write(location);
                 writer.write(System.lineSeparator());
                 writer.write(" => ");
-
-                List<String> monitors = locationToMonitorIds.get(id);
+    
+                String specName = location.split(" @ ", 2)[0];
+                List<Integer> monitors = locationToMonitorIds.get(id);
                 if (monitors != null) {
-                    List<String> compressedSeries = traceDB.computeTimeSeries(monitors);
+                    List<String> compressedSeries = traceDB.computeTimeSeries(specName, monitors);
                     writer.write(compressedSeries.toString());
                 }
                 writer.write(System.lineSeparator());

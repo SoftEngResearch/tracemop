@@ -90,8 +90,8 @@ public class TraceDatabase implements TraceDB {
     }
 
     @Override
-    public List<String> computeTimeSeries(List<String> monitors) {
-        return database.computeTimeSeries(monitors);
+    public List<String> computeTimeSeries(String specName, List<Integer> monitors) {
+        return database.computeTimeSeries(specName, monitors);
     }
 
     @Override

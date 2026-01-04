@@ -22,7 +22,7 @@ public interface TraceDB {
 
     default List<String> get(String monitorID) { return null; }
 
-    default List<String> computeTimeSeries(List<String> monitors) { return Collections.emptyList(); }
+    default List<String> computeTimeSeries(String specName, List<Integer> monitors) { return Collections.emptyList(); }
 
     void createTable();
 
