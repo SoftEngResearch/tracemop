@@ -405,7 +405,11 @@ public class BaseMonitor extends Monitor {
 
         if (Main.options.internalBehaviorObserving) {
             // Receive new event, notify traceDB
-            ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().add(specName + \"#\" + this.monitorid, \"";
+            if (specParam.size() > 0) {
+                ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().add(specName + \"#\" + this.monitorid, \"";
+            } else {
+                ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().addRaw(specName + \"#\" + this.monitorid, \"";
+            } 
             if (Main.options.trackEventLocations) {
                 ret += event.getId() + "\" + \"~\" + TraceUtil.getShortLocation(joinpoint)";
             } else {
@@ -464,7 +468,7 @@ public class BaseMonitor extends Monitor {
 
         ret += aftereventMonitoringCode;
 
-        if (Main.options.valg || Main.options.traj) {
+        if ((Main.options.valg || Main.options.traj) && specParam.size() > 0) {
             SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
             if (config != null && !config.disabled) {
                 ret += "if (recordEvents) {\n";	
@@ -503,6 +507,11 @@ public class BaseMonitor extends Monitor {
         if (event.isBlockingEvent())
             ret += "boolean cloned_monitor_condition_satisfied = true;\n";
 
+        if (!inMonitorSet) {
+            if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) {
+                ret += monitorVar + ".violated = false;\n";
+            }
+        }
         for (PropertyAndHandlers prop : props) {
             PropMonitor propMonitor = propMonitors.get(prop);
 
@@ -613,7 +622,13 @@ public class BaseMonitor extends Monitor {
                 ret += handlerCode;
             }
         }
-
+        if (!inMonitorSet) {
+            if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) {
+                ret += "\nif (" + monitorVar + ".violated) {\n";
+                ret += "return false;\n";
+                ret += "}\n";
+            }
+        }
         return ret;
     }
 
@@ -803,9 +818,12 @@ public class BaseMonitor extends Monitor {
 //            ret += "ret.trace = new ArrayList<String>();\n";
 //            ret += "ret.trace.addAll(this.trace);\n";
         }
-        if (Main.options.valg || Main.options.traj) { // || Main.options.series) {
-            ret += "ret.location = this.location;\n";
-            ret += "ret.traceVal = this.traceVal;\n";
+        if ((Main.options.valg || Main.options.traj) && specParam.size() > 0) { // || Main.options.series) {
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+                ret += "ret.location = this.location;\n";
+                ret += "ret.traceVal = this.traceVal;\n";
+            }
         }
         if (this.isAtomicMonitorUsed()) {
             ret += "ret.pairValue = new AtomicInteger(pairValue.get());\n";
@@ -859,6 +877,12 @@ public class BaseMonitor extends Monitor {
             }
         }
     	ret += "Random random = new Random(1);\n";
+        if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) {
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+                ret += "public boolean violated;\n";
+            }
+        }
         ret += "\n";
 
         if (this.isAtomicMonitorUsed()) {
@@ -979,7 +1003,21 @@ public class BaseMonitor extends Monitor {
             PropMonitor propMonitor = propMonitors.get(prop);
             for (HandlerMethod handlerMethod : propMonitor.handlerMethods
                     .values()) {
-                ret += handlerMethod + "\n";
+                String handlerMethodStr = handlerMethod.toString();
+                if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) {
+                    SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+                    if (config != null && !config.disabled) {
+                	    int idx = handlerMethodStr.indexOf("has been violated on line");
+                	    while (idx > 0) {
+                    		idx = handlerMethodStr.indexOf("}", idx);
+                    		handlerMethodStr = handlerMethodStr.substring(0, idx) +
+                    		"violated = true;\n" +
+                    		handlerMethodStr.substring(idx);
+                    		idx = handlerMethodStr.indexOf("has been violated on line", idx);
+                	    }
+                    }
+                }
+                ret += handlerMethodStr + "\n";
             }
         }
 
