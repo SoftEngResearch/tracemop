@@ -2,6 +2,7 @@ package com.runtimeverification.rvmonitor.java.rt.observable;
 
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.runtimeverification.rvmonitor.java.rt.util.TraceDBTrie;
@@ -14,6 +15,8 @@ public class TimeSeriesCollector extends MonitorTraceCollector {
     private static int nextId = 0;
     private static final ReentrantLock lock = new ReentrantLock();
 
+    public static String randomFileName = "-" + UUID.randomUUID();
+    
     public TimeSeriesCollector(PrintWriter writer, String dbPath, String dbConfPath) {
         super(writer, dbPath, dbConfPath);
     }

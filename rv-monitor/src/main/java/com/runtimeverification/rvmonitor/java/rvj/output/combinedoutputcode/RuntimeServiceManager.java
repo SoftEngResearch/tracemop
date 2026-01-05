@@ -251,7 +251,7 @@ public class RuntimeServiceManager implements ICodeGenerator {
         CodeVariable timeSeriesWriterVar = new CodeVariable(writer, "timeSeriesWriter");
         CodeVarDeclStmt createTimeSeriesWriter = new CodeVarDeclStmt(timeSeriesWriterVar, 
             new CodeNewExpr(writer, new CodeNewExpr(fileType, CodeLiteralExpr.fromLegacy(CodeType.string(),
-                "System.getenv(\"TRACEDB_PATH\") + \"/../project/time-series\""))));
+                "System.getenv(\"TRACEDB_PATH\") + \"/../project/time-series\" + TimeSeriesCollector.randomFileName"))));
 
         CodeType collectorType = new CodeType("TimeSeriesCollector");
         CodeVariable collectorVar = new CodeVariable(collectorType, "timeSeriesCollector");
