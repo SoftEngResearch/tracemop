@@ -183,6 +183,8 @@ function process() {
       rm -rf "${empty_db}"
     fi
   fi
+  cat ${OUTPUT_DIR}/project/time-series-* > ${OUTPUT_DIR}/project/time-series 2>/dev/null
+  rm -f ${OUTPUT_DIR}/project/time-series-*
 }
 
 clone

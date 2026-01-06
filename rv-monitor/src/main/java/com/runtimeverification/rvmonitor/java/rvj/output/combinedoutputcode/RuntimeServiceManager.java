@@ -249,10 +249,17 @@ public class RuntimeServiceManager implements ICodeGenerator {
         CodeStmtCollection timeSeriesStatements = new CodeStmtCollection();
 
         CodeVariable timeSeriesWriterVar = new CodeVariable(writer, "timeSeriesWriter");
-        CodeVarDeclStmt createTimeSeriesWriter = new CodeVarDeclStmt(timeSeriesWriterVar, 
-            new CodeNewExpr(writer, new CodeNewExpr(fileType, CodeLiteralExpr.fromLegacy(CodeType.string(),
-                "System.getenv(\"TRACEDB_PATH\") + \"/../project/time-series\""))));
+        CodeVarDeclStmt createTimeSeriesWriter;
 
+        if (Main.options.collectUniqueTraces) {
+            createTimeSeriesWriter = new CodeVarDeclStmt(timeSeriesWriterVar,
+                new CodeNewExpr(writer, new CodeNewExpr(fileType, CodeLiteralExpr.fromLegacy(CodeType.string(),
+                    "System.getenv(\"TRACEDB_PATH\") + \"/../project/time-series\" + com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().randomFileName"))));
+        } else {
+            createTimeSeriesWriter = new CodeVarDeclStmt(timeSeriesWriterVar, 
+                new CodeNewExpr(writer, new CodeNewExpr(fileType, CodeLiteralExpr.fromLegacy(CodeType.string(),
+                    "System.getenv(\"TRACEDB_PATH\") + \"/../project/time-series\" + TimeSeriesCollector.randomFileName"))));
+        }
         CodeType collectorType = new CodeType("TimeSeriesCollector");
         CodeVariable collectorVar = new CodeVariable(collectorType, "timeSeriesCollector");
         List<CodeExpr> args = new ArrayList<>();

@@ -24,6 +24,7 @@ public class RawMonitor extends Monitor {
     private final RVMVariable activity = new RVMVariable("RVM_activity");
     private final RVMVariable lastevent = new RVMVariable("RVM_lastevent");
     private final List<EventDefinition> events;
+    private RVMParameters specParam;
 
     private final UserJavaCode monitorDeclaration;
 
@@ -35,6 +36,7 @@ public class RawMonitor extends Monitor {
         isDefined = true;
 
         this.monitorName = new RVMVariable(rvmSpec.getName() + "Monitor");
+        this.specParam = rvmSpec.getParameters();
 
         if (isOutermost) {
             varInOutermostMonitor = new VarInOutermostMonitor(outputName,
@@ -109,7 +111,7 @@ public class RawMonitor extends Monitor {
             eventActionStr = eventActionStr.replaceAll("__SKIP",
                     BaseMonitor.skipEvent + " = true");
 
-            if (Main.options.valg || Main.options.traj) { 
+            if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) { 
                 SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
                 if (config != null && !config.disabled) {
             	    int idx = eventActionStr.indexOf("has been violated on line");
@@ -149,7 +151,11 @@ public class RawMonitor extends Monitor {
 
         if (Main.options.internalBehaviorObserving) {
             // Receive new event, notify traceDB
-            ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().addRaw(specName + \"#\" + this.monitorid, \"";
+            if (specParam.size() > 0) {
+                ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().add(specName + \"#\" + this.monitorid, \"";
+            } else {
+                ret += "com.runtimeverification.rvmonitor.java.rt.util.TraceDatabase.getInstance().addRaw(specName + \"#\" + this.monitorid, \"";
+            }
             if (Main.options.trackEventLocations) {
                 ret += event.getId() + "\" + \"~\" + TraceUtil.getShortLocation(joinpoint)";
             } else {
@@ -173,6 +179,14 @@ public class RawMonitor extends Monitor {
         if (eventAction != null)
             ret += eventAction;
 
+        if ((Main.options.valg || Main.options.traj) && specParam.size() > 0) { 
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+                ret += "if (recordEvents) {\n";	
+                ret += "traceVal = traceVal * BASE + (System.identityHashCode(joinpoint) & 0xffffffffL);\n";
+                ret += "}\n";   
+            }
+        }
         if (!Main.options.generateVoidMethods)
             ret += "return true;\n";
         ret += "}\n";
@@ -195,8 +209,11 @@ public class RawMonitor extends Monitor {
         // + ";\n";
         // i
 		if (!inMonitorSet) {
-            if (Main.options.valg || Main.options.traj) { 
-    		    ret += monitorVar + ".violated = false;\n";
+            if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) { 
+                SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+                if (config != null && !config.disabled) {
+        		    ret += monitorVar + ".violated = false;\n";
+                }
             }
 		}
         ret += monitorVar + ".event_" + event.getId() + "(";
@@ -218,10 +235,13 @@ public class RawMonitor extends Monitor {
         }
         ret += ");\n";
 		if (!inMonitorSet) {
-            if (Main.options.valg || Main.options.traj) { 
-    		    ret += "\nif (" + monitorVar + ".violated) {\n";
-    		    ret += "return false;\n";
-    		    ret += "}\n";
+            if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) { 
+                SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+                if (config != null && !config.disabled) {
+        		    ret += "\nif (" + monitorVar + ".violated) {\n";
+        		    ret += "return false;\n";
+        		    ret += "}\n";
+                }
             }
 		}
         return ret;
@@ -267,6 +287,13 @@ public class RawMonitor extends Monitor {
 
 //            ret += "ret.trace = new ArrayList<String>();\n";
 //            ret += "ret.trace.addAll(this.trace);\n";
+        }
+        if ((Main.options.valg || Main.options.traj) && specParam.size() > 0) { 
+            SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
+            if (config != null && !config.disabled) {
+                ret += "ret.location = this.location;\n";
+                ret += "ret.traceVal = this.traceVal;\n";
+            }
         }
         ret += "return ret;\n";
         ret += "}\n";
@@ -315,7 +342,7 @@ public class RawMonitor extends Monitor {
         if (Main.options.statistics) {
             ret += stat.fieldDecl() + "\n";
         }
-        if (Main.options.valg || Main.options.traj) { 
+        if ((Main.options.valg || Main.options.traj) && specParam.size() == 0) { 
             SpecConfig config = Main.options.specConfigMap.get(this.getOutputName());
             if (config != null && !config.disabled) {
             	ret += "public boolean violated;\n";
