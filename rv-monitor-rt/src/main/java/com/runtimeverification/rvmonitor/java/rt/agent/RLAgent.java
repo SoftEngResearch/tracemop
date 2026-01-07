@@ -1,4 +1,4 @@
-package com.runtimeverification.rvmonitor.java.rt.rlagent;
+package com.runtimeverification.rvmonitor.java.rt.agent;
 
 import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
 import java.lang.Math;
@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RLAgent {
+public class RLAgent implements Agent {
     private double Qn;
     private double Qc;
     private double reward;
@@ -107,6 +107,7 @@ public class RLAgent {
         return true;
     }
 
+    @Override
     public boolean decideAction() { 
         // Initial Action Selection 
         if (timeStep++ == 0) {
@@ -161,7 +162,8 @@ public class RLAgent {
 
         return action;
     }
-
+    
+    @Override
     public void setMonitor(AbstractMonitor monitor) {
         this.monitor = monitor;
         if (converged) {
@@ -169,6 +171,7 @@ public class RLAgent {
         }
     }
 
+    @Override
     public void clearMonitor() {
         this.monitor = null;
     }

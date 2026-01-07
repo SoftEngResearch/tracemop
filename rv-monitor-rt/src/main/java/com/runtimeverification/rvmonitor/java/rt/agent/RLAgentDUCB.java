@@ -1,4 +1,4 @@
-package com.runtimeverification.rvmonitor.java.rt.rlagent;
+package com.runtimeverification.rvmonitor.java.rt.agent;
 
 import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
 import java.util.Random;
@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RLAgentDUCB {
+public class RLAgentDUCB implements Agent {
     private double sumC;
     private double sumN;
     private double countC = 1.0;
@@ -120,6 +120,7 @@ public class RLAgentDUCB {
         return true;
     }
 
+    @Override
     public boolean decideAction() {
     	// Initial Action Selection 
     	if (timeStep++ == 0) {
@@ -176,10 +177,12 @@ public class RLAgentDUCB {
         return action;
     }
 
+    @Override
     public void setMonitor(AbstractMonitor monitor) {
         this.monitor = monitor;
     }
 
+    @Override
     public void clearMonitor() {
         this.monitor = null;
     }

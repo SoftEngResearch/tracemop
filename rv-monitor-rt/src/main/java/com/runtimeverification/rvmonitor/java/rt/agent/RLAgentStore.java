@@ -1,4 +1,4 @@
-package com.runtimeverification.rvmonitor.java.rt.rlagent;
+package com.runtimeverification.rvmonitor.java.rt.agent;
 
 import org.aspectj.lang.reflect.SourceLocation;
 

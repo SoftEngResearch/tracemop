@@ -1,4 +1,4 @@
-package com.runtimeverification.rvmonitor.java.rt.rlagent;
+package com.runtimeverification.rvmonitor.java.rt.agent;
 
 import com.runtimeverification.rvmonitor.java.rt.tablebase.AbstractMonitor;
 import java.util.HashSet;
@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class RLAgentDSTS {
+public class RLAgentDSTS implements Agent {
     private double alphaC;
     private double alphaN;
     private double betaC = 1.0;
@@ -125,6 +125,7 @@ public class RLAgentDSTS {
         return true;
     }
 
+    @Override
     public boolean decideAction() {
         // Initial Action Selection 
         if (timeStep++ == 0) {
@@ -186,10 +187,12 @@ public class RLAgentDSTS {
         return action;
     }
 
+    @Override
     public void setMonitor(AbstractMonitor monitor) {
         this.monitor = monitor;
     }
 
+    @Override
     public void clearMonitor() {
         this.monitor = null;
     }

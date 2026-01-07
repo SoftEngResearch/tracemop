@@ -760,9 +760,9 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                     !this.event.getUniqueId().equals("createSet") && 
                     !this.event.getUniqueId().equals("getset1") && !this.event.getUniqueId().equals("getset2")) {
 
-                    CodeVariable rlAgent = new CodeVariable(CodeType.object(), "rlAgent"); 
+                    CodeVariable agent = new CodeVariable(CodeType.object(), "agent"); 
                     ifbody.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
-                        new CodeVarRefExpr(rlAgent), "setMonitor", monitorref)));
+                        new CodeVarRefExpr(agent), "setMonitor", monitorref)));
                 }
             }
             {
@@ -1114,6 +1114,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
              (isClone && !this.event.getUniqueId().equals("createSet") && 
                          !this.event.getUniqueId().equals("getset1") && 
                          !this.event.getUniqueId().equals("getset2"))) {
+            boolean seriesEnabled = System.getenv("SERIES_PATH") != null;
             CodeExpr threadLocExpr = CodeExpr.fromLegacy(CodeType.integer(),
                          "(int) Thread.currentThread().getId()" +
                          " + " +
@@ -1127,23 +1128,54 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                                new CodeVarRefExpr(threadLoc));
             CodeNegExpr notContainsKey = new CodeNegExpr(containsKey);
 
-            CodeStmtCollection putAgentStmt = new CodeStmtCollection();
-            CodeVariable agentsMap = new CodeVariable(new CodeType("HashMap<Integer, RLAgent>"), 
-                                  this.rvmSpec.getName() + "_agents");
-
             CodeStmtCollection agentPutAdd = new CodeStmtCollection();
+            CodeVariable agentsMap = new CodeVariable(new CodeType("HashMap<Integer, Agent>"), this.rvmSpec.getName() + "_agents");
 
             SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
-            CodeVariable newAgent = new CodeVariable(new CodeType("RLAgent"), "newAgent"); 
+            CodeVariable newRLAgent = new CodeVariable(new CodeType("RLAgent"), "newAgent"); 
             String trajArg = Main.options.traj ? ", true" : "";
-            CodeExpr newAgentExpr = CodeExpr.fromLegacy(new CodeType("RLAgent"), "new RLAgent(" + this.rvmSpec.getName() + "_traces, " 
-                                                        + config.alpha + ", " 
-                                                        + config.epsilon + ", " 
-                                                        + config.threshold + ", " 
-                                                        + config.initc + ", " 
-                                                        + config.initn
-                                                        + trajArg + ")");
+            CodeExpr newRLAgentExpr = CodeExpr.fromLegacy(new CodeType("RLAgent"), "new RLAgent(" + this.rvmSpec.getName() + "_traces, " 
+                                                          + config.alpha + ", " 
+                                                          + config.epsilon + ", " 
+                                                          + config.threshold + ", " 
+                                                          + config.initc + ", " 
+                                                          + config.initn
+                                                          + trajArg + ")");
 
+            if (seriesEnabled) {
+                CodeVariable timeSeries = new CodeVariable(new CodeType("Set<Integer>"), "timeSeries");
+                agentPutAdd.add(new CodeVarDeclStmt(timeSeries,
+                    new CodeMethodInvokeExpr(new CodeType("Set<Integer>"),
+                        CodeExpr.fromLegacy(CodeType.klass(), "OptAgent"), "checkTimeSeries",
+                        CodeExpr.fromLegacy(CodeType.string(), "\"" + this.rvmSpec.getName() + "Monitor\""),
+                        CodeExpr.fromLegacy(CodeType.object(), "joinpoint"))));
+
+                CodeStmtCollection optAgentPath = new CodeStmtCollection(); 
+                CodeStmtCollection rlAgentPath = new CodeStmtCollection();
+
+                CodeExpr tsNotNull = CodeBinOpExpr.isNotNull(new CodeVarRefExpr(timeSeries));
+
+                CodeVariable newOptAgent = new CodeVariable(new CodeType("OptAgent"), "newAgent");
+                optAgentPath.add(new CodeVarDeclStmt(newOptAgent,
+                    CodeExpr.fromLegacy(new CodeType("OptAgent"), "new OptAgent(timeSeries)")));
+                optAgentPath.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
+                    new CodeVarRefExpr(agentsMap), "put", new CodeVarRefExpr(threadLoc), new CodeVarRefExpr(newOptAgent))));
+
+                rlAgentPath.add(new CodeVarDeclStmt(newRLAgent, newRLAgentExpr));
+                rlAgentPath.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
+                    new CodeVarRefExpr(agentsMap), "put", new CodeVarRefExpr(threadLoc), new CodeVarRefExpr(newRLAgent))));
+
+                CodeConditionStmt condStmt = new CodeConditionStmt(tsNotNull, optAgentPath);
+                condStmt.setElse(rlAgentPath);
+                agentPutAdd.add(condStmt);
+            } else {
+                CodeStmtCollection rlAgentOnly = new CodeStmtCollection(); 
+                rlAgentOnly.add(new CodeVarDeclStmt(newRLAgent, newRLAgentExpr));
+                rlAgentOnly.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
+                    new CodeVarRefExpr(agentsMap), "put", new CodeVarRefExpr(threadLoc), new CodeVarRefExpr(newRLAgent))));
+                agentPutAdd.add(rlAgentOnly);
+            }
+            /***
             agentPutAdd.add(new CodeVarDeclStmt(newAgent, newAgentExpr));
             agentPutAdd.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
                             new CodeVarRefExpr(agentsMap), 
@@ -1158,24 +1190,23 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                                 CodeExpr.fromLegacy(CodeType.string(), "\"" + this.rvmSpec.getName() + "\""),
                                 CodeExpr.fromLegacy(CodeType.object(), "joinpoint.getSourceLocation()"), 
                                 new CodeVarRefExpr(newAgent))));
-            }
+            }***/
             stmts.add(new CodeConditionStmt(notContainsKey, agentPutAdd));
 
             CodeExpr getAgentExpr = CodeExpr.fromLegacy(CodeType.object(),
                                     this.rvmSpec.getName() + "_agents.get(threadLoc)");         
-            CodeVariable rlAgent = new CodeVariable(new CodeType("RLAgent"), "rlAgent");
-            stmts.add(new CodeVarDeclStmt(rlAgent, getAgentExpr));
+            CodeVariable agent = new CodeVariable(new CodeType("Agent"), "agent"); 
+            stmts.add(new CodeVarDeclStmt(agent, getAgentExpr));
        
             String methodName = Main.options.valg ? "decideAction" : "createAction";
             CodeMethodInvokeExpr decideActionExpr = new CodeMethodInvokeExpr(CodeType.bool(),
-                                new CodeVarRefExpr(rlAgent),
+                                new CodeVarRefExpr(agent),
                                 methodName);
             CodeNegExpr negDecideAction = new CodeNegExpr(decideActionExpr);
 
             CodeStmtCollection clearAndReturn = new CodeStmtCollection();
             clearAndReturn.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
-                               new CodeVarRefExpr(rlAgent), 
-                               "clearMonitor")));
+                               new CodeVarRefExpr(agent), "clearMonitor")));
             /* CodeVariable RVMLock = new CodeVariable(new CodeType("ReentrantLock"), "MultiSpec_1_RVMLock_" + this.rvmSpec.getName());
             clearAndReturn.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
                                new CodeVarRefExpr(RVMLock), "unlock"))); */
@@ -1228,9 +1259,9 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
             if ((config == null || !config.disabled) &&
                 this.rvmSpec.getParameters().size() != 0 && !specList.contains(this.rvmSpec.getName())) {
-                CodeVariable rlAgent = new CodeVariable(CodeType.object(), "rlAgent");   
+                CodeVariable agent = new CodeVariable(CodeType.object(), "agent");   
                 stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
-                          new CodeVarRefExpr(rlAgent), "setMonitor", monitorref)));
+                          new CodeVarRefExpr(agent), "setMonitor", monitorref)));
             }
         }
         {
