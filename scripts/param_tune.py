@@ -6,12 +6,13 @@ import random
 import sys
 import json
 import logging
-import time
+import argparse
 logging.getLogger("optuna").setLevel(logging.WARNING)
 
+DECAY_RATE = 0.9
 DEFAULT_THRESHOLD = 0.0001
-INIT_C = 5.0
-INIT_N = 0.0
+DEFAULT_QC = 5.0
+DEFAULT_QN = 0.0
 
 def parse_all_specs(file_path):
     specs = set()
@@ -21,8 +22,8 @@ def parse_all_specs(file_path):
                 specs.add(line.split("@")[0].strip())
     return sorted(specs)
 
-def parse_time_series_file(file_path, spec_name):
-    series_list = []
+def parse_trajectories_file(file_path, spec_name):
+    traces = []
     current_spec = None
     with open(file_path, "r") as f:
         for line in f:
@@ -32,37 +33,51 @@ def parse_time_series_file(file_path, spec_name):
             if "@" in line:
                 current_spec = line.split("@")[0].strip()
             elif line.startswith("=>") and current_spec == spec_name:
-                matches = re.findall(r"<\s*(\d+):\s*(unique|redundant)\s*>", line)
-                if not matches:
-                    continue
-                vals = {int(t): (1 if label == "unique" else 0) for t, label in matches}
-                series = [vals[t] for t in sorted(vals.keys())]
-                if series:
-                    series_list.append(series)
-    return series_list
+                steps = re.findall(r"<(\d+):\s*A=(create|ncreate),\s*R=([\d\.]+),", line)
+                trace = [(int(t), int(float(r))) for t, a, r in steps if a == "create"]
+                if trace:
+                    traces.append(trace)
+    return traces
+
+def fill_missing(trace, decay=DECAY_RATE):
+    if not trace:
+        return []
+    max_time = max(t for t, _ in trace)
+    true_values = {t: v for t, v in trace}
+    inferred, weights = [], {0: 0.0, 1: 0.0}
+    for t in range(max_time + 1):
+        for v in (0, 1):
+            weights[v] *= math.exp(-decay)
+        if t in true_values:
+            v = true_values[t]
+            weights[v] += 1.0
+            inferred.append(v)
+        else:
+            inferred.append(1 if weights[1] >= weights[0] else 0)
+    return inferred
 
 def decide_action(Qc, Qn, alpha, epsilon, time_step):
     if time_step == 0:
-        return INIT_N <= INIT_C
+        return True
     if random.random() < epsilon:
         return random.choice([True, False])
     return Qn <= Qc
 
-def simulate_series(series, alpha, epsilon):
-    Qc, Qn = INIT_C, INIT_N
-    num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
-    for time_step, true_action in enumerate(series):
+def simulate_trace(trace, alpha, epsilon):
+    Qc, Qn = DEFAULT_QC, DEFAULT_QN
+    num_tot, num_dup, converged, converged_action = 0, 0, False, None
+    for t, true_action in enumerate(trace):
         if converged:
             if converged_action:
-                num_uniq += (true_action == 1)
+                num_tot += 1
+                num_dup += (true_action == 0)
             continue
-        else:
-            action = decide_action(Qc, Qn, alpha, epsilon, time_step)
+        action = decide_action(Qc, Qn, alpha, epsilon, t)
         if action:
             num_tot += 1
-            num_uniq += (true_action == 1)
-            num_dup += (true_action == 0)
             reward = 1.0 if true_action == 1 else 0.0
+            if true_action == 0:
+                num_dup += 1
             Qc += alpha * (reward - Qc)
         else:
             reward = (num_dup / num_tot) if num_tot > 0 else 0.0
@@ -70,191 +85,64 @@ def simulate_series(series, alpha, epsilon):
         if abs(1.0 - abs(Qc - Qn)) < DEFAULT_THRESHOLD:
             converged = True
             converged_action = Qn <= Qc
-    return num_uniq
+    return num_tot - num_dup
 
-def decide_action_ducb(sumC, sumN, countC, countN, time_step, C):
-    if time_step == 0:
-        return sumN <= sumC
-    DUCBc = sumC / countC + C * math.sqrt(math.log(time_step) / countC)
-    DUCBn = sumN / countN + C * math.sqrt(math.log(time_step) / countN)
-    return DUCBn <= DUCBc
-
-def simulate_series_ducb(series, gamma, C):
-    sumC, sumN = INIT_C, INIT_N
-    countC, countN = 1.0, 1.0
-    num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
-    for time_step, true_action in enumerate(series):
-        if converged:
-            if converged_action:
-                num_uniq += (true_action == 1)
-            continue
-        else:
-            action = decide_action_ducb(sumC, sumN, countC, countN, time_step, C)
-        if action:
-            num_tot += 1
-            num_uniq += (true_action == 1)
-            num_dup += (true_action == 0)
-            reward = 1.0 if true_action == 1 else 0.0
-            sumC = gamma * sumC + reward
-            countC = gamma * countC + 1.0
-        else:
-            reward = (num_dup / num_tot) if num_tot > 0 else 0.0
-            sumN = gamma * sumN + reward
-            countN = gamma * countN + 1.0
-        MuC = sumC / countC
-        MuN = sumN / countN
-        if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
-            converged = True
-            converged_action = MuN <= MuC
-    return num_uniq
-
-def sample_beta(alpha, beta, rng):
-    y1 = sample_gamma(alpha, rng)
-    y2 = sample_gamma(beta, rng)
-    return y1 / (y1 + y2)
-
-def sample_gamma(shape, rng):
-    if shape < 1.0:
-        u = rng.random()
-        y = sample_gamma(1.0 + shape, rng)
-        result = y * (u ** (1.0 / shape))
-        return max(result, 1e-12)
-    d = shape - 1.0 / 3.0
-    c = 1.0 / math.sqrt(9.0 * d)
-    while True:
-        x = rng.gauss(0, 1)
-        v = 1 + c * x
-        if v <= 0:
-            continue
-        v = v**3
-        u = rng.random()
-        if u < 1 - 0.0331 * x**4:
-            return d * v
-        if math.log(u) < 0.5 * x**2 + d * (1 - v + math.log(v)):
-            return d * v
-
-def simulate_series_dsts(series, gamma):
-    rng = random.Random()
-    alphaC, alphaN = max(INIT_C, 1.0), max(INIT_N, 1.0)
-    betaC, betaN = 1.0, 1.0
-    num_tot, num_uniq, num_dup, converged, converged_action = 0, 0, 0, False, None
-    for time_step, true_action in enumerate(series):
-        if converged:
-            if converged_action:
-                num_uniq += (true_action == 1)
-            continue
-        else:
-            if time_step == 0:
-                action = alphaN <= alphaC
-            else:
-                thetaC = sample_beta(alphaC, betaC, rng)
-                thetaN = sample_beta(alphaN, betaN, rng)
-                action = thetaN <= thetaC
-        if action:
-            num_tot += 1
-            num_uniq += (true_action == 1)
-            num_dup += (true_action == 0)
-            reward = 1.0 if true_action == 1 else 0.0
-            alphaC += reward
-            betaC  += (1 - reward)
-        else:
-            reward = (num_dup / num_tot) if num_tot > 0 else 0.0
-            alphaN += reward
-            betaN  += (1 - reward)
-
-        alphaC = max(alphaC * (1.0 - gamma), 1e-6)
-        betaC  = max(betaC  * (1.0 - gamma), 1e-6)
-        alphaN = max(alphaN * (1.0 - gamma), 1e-6)
-        betaN  = max(betaN  * (1.0 - gamma), 1e-6)
-
-        MuC = alphaC / (alphaC + betaC)
-        MuN = alphaN / (alphaN + betaN)
-        if abs(1.0 - abs(MuC - MuN)) < DEFAULT_THRESHOLD:
-            converged = True
-            converged_action = MuN <= MuC
-    return num_uniq
-
-def make_objective(series_list, algorithm):
+def make_objective(spec, traces):
     def objective(trial):
-        if algorithm == "default":
-            alpha = round(trial.suggest_float("alpha", 0.01, 0.99, step=0.01), 2)
-            epsilon = round(trial.suggest_float("epsilon", 0.01, 0.99, step=0.01), 2)
-            total = sum(simulate_series(series, alpha, epsilon) for series in series_list)
-        elif algorithm == "ducb":
-            gamma = round(trial.suggest_float("gamma", 0.01, 0.99, step=0.01), 2)
-            C = round(trial.suggest_float("C", 0.01, 2.0, step=0.01), 2)
-            total = sum(simulate_series_ducb(series, gamma, C) for series in series_list)
-        elif algorithm == "dsts":
-            gamma = round(trial.suggest_float("gamma", 0.01, 0.99, step=0.01), 2)
-            total = sum(simulate_series_dsts(series, gamma) for series in series_list)
-        else:
-            raise ValueError(f"Unknown algorithm: {algorithm}")
+        alpha = round(trial.suggest_float("alpha", 0.01, 0.99, step=0.01), 2)
+        epsilon = round(trial.suggest_float("epsilon", 0.01, 0.99, step=0.01), 2)
+        total = sum(simulate_trace(trace, alpha, epsilon) for trace in traces)
         return total
     return objective
 
-def tune_all_specs(time_series_file, n_trials, algorithm):
-    specs = parse_all_specs(time_series_file)
-    total_specs = len(specs)
+def tune_all_specs(traj_file, n_trials):
+    specs = parse_all_specs(traj_file)
+    total = len(specs)
+    processed = 0
+
     results = {}
-    for idx, spec in enumerate(specs, start=1):
-        start_time = time.time()
-        series_list = parse_time_series_file(time_series_file, spec)
+    for spec in specs:
+        partial_traces = parse_trajectories_file(traj_file, spec)
+        if not partial_traces:
+            continue
+        traces = [fill_missing(trace) for trace in partial_traces]
         study = optuna.create_study(direction="maximize")
-        study.optimize(make_objective(series_list, algorithm), n_trials=n_trials, show_progress_bar=False)
-        elapsed = time.time() - start_time
-
+        study.optimize(make_objective(spec, traces), n_trials=n_trials, show_progress_bar=False)
         best = {
-            "initC": INIT_C,
-            "initN": INIT_N,
-            "threshold": DEFAULT_THRESHOLD
+            "alpha": round(study.best_params["alpha"], 2),
+            "epsilon": round(study.best_params["epsilon"], 2),
+            "threshold": DEFAULT_THRESHOLD,
+            "Qc_init": DEFAULT_QC,
+            "Qn_init": DEFAULT_QN,
         }
-        if algorithm == "default":
-            best.update({
-                "alpha": round(study.best_params["alpha"], 2),
-                "epsilon": round(study.best_params["epsilon"], 2)
-            })
-            print(f"[{idx}/{total_specs}] {spec}: alpha={best['alpha']}, epsilon={best['epsilon']}, "
-                  f"threshold={DEFAULT_THRESHOLD}, initC={INIT_C}, initN={INIT_N}, time={elapsed:.2f}s", flush=True)
-        elif algorithm == "ducb":
-            best.update({
-                "gamma": round(study.best_params["gamma"], 2),
-                "C": round(study.best_params["C"], 2)
-            })
-            print(f"[{idx}/{total_specs}] {spec}: gamma={best['gamma']}, C={best['C']}, "
-                  f"threshold={DEFAULT_THRESHOLD}, initC={INIT_C}, initN={INIT_N}, time={elapsed:.2f}s", flush=True)
-        elif algorithm == "dsts":
-            best.update({
-                "gamma": round(study.best_params["gamma"], 2)
-            })
-            print(f"[{idx}/{total_specs}] {spec}: gamma={best['gamma']}, "
-                  f"threshold={DEFAULT_THRESHOLD}, initC={INIT_C}, initN={INIT_N}, time={elapsed:.2f}s", flush=True)
-        else:
-            raise ValueError(f"Unknown algorithm: {algorithm}")
-
         results[spec] = best
+        processed += 1
+        print(f"[{spec} ({processed}/{total})] alpha={best['alpha']}, epsilon={best['epsilon']}, "
+              f"threshold={best['threshold']}, Qc_init={best['Qc_init']}, Qn_init={best['Qn_init']}", flush=True)
     return results
 
 def main():
-    projects = {
-        "kiara": "kiara-series/project/time-series",
-        "stringsearchalgorithms": "stringsearchalgorithms-series/project/time-series",
-        "Jaba": "Jaba-series/project/time-series",
-        "btree4j": "btree4j-series/project/time-series",
-        "rtree-multi": "rtree-multi/project/time-series",
-    }
+    parser = argparse.ArgumentParser()
+    parser.add_argument("traj_file", help="Path to trajectories file")
+    parser.add_argument("n_trials", type=int, help="Number of trials")
+    parser.add_argument("out_file", help="Output JSON file")
 
-    n_trials = 100
-    algorithms = ["dsts"]
+    args = parser.parse_args()
 
-    for project_name, series_file in projects.items():
-        for algo in algorithms:
-            print(f"Tuning hyperparameters for {project_name}, algorithm: {algo}...")
-            results = tune_all_specs(series_file, n_trials, algo)
-            suffix = "" if algo == "default" else f"-{algo}"
-            output_file = f"{project_name}{suffix}-tuned_hyperparameters.json"
-            with open(output_file, "w") as f:
-                json.dump(results, f, indent=4)
-            print(f"Saved results to {output_file}\n")
+    traj_file = args.traj_file
+    n_trials = args.n_trials
+    out_file = args.out_file
+
+    if not os.path.isfile(traj_file):
+        sys.exit(f"[ERROR] Missing trajectories file: {traj_file}")
+
+    print(f"[INFO] Tuning from {traj_file}", flush=True)
+    results = tune_all_specs(traj_file, n_trials)
+
+    with open(out_file, "w") as f:
+        json.dump(results, f, indent=4)
+
+    print(f"[INFO] Wrote {out_file}", flush=True)
 
 if __name__ == "__main__":
     main()
