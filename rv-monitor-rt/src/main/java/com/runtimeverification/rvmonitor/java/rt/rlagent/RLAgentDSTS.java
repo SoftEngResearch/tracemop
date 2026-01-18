@@ -110,11 +110,10 @@ public class RLAgentDSTS {
             alphaN += reward;
             betaN  += (1.0 - reward);
         }
-
-        alphaC = Math.max(alphaC * (1.0 - GAMMA), 1e-6);
-        alphaN = Math.max(alphaN * (1.0 - GAMMA), 1e-6);
-        betaC  = Math.max(betaC  * (1.0 - GAMMA), 1e-6);
-        betaN  = Math.max(betaN  * (1.0 - GAMMA), 1e-6);
+        alphaC *= (1.0 - GAMMA);
+        alphaN *= (1.0 - GAMMA);
+        betaC  *= (1.0 - GAMMA);
+        betaN  *= (1.0 - GAMMA);
 
         if (traj && lastTimestep >= 0) {
             double lastMuC = lastAlphaC / (lastAlphaC + lastBetaC);
@@ -161,11 +160,10 @@ public class RLAgentDSTS {
             alphaN += reward;
             betaN  += (1.0 - reward);
         }
-
-        alphaC = Math.max(alphaC * (1.0 - GAMMA), 1e-6);
-        alphaN = Math.max(alphaN * (1.0 - GAMMA), 1e-6);
-        betaC  = Math.max(betaC  * (1.0 - GAMMA), 1e-6);
-        betaN  = Math.max(betaN  * (1.0 - GAMMA), 1e-6);
+        alphaC *= (1.0 - GAMMA);
+        alphaN *= (1.0 - GAMMA);
+        betaC  *= (1.0 - GAMMA);
+        betaN  *= (1.0 - GAMMA);
 
         double thetaC = sampleBeta(alphaC, betaC);
         double thetaN = sampleBeta(alphaN, betaN);
