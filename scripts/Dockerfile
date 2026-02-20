@@ -21,9 +21,9 @@ RUN \
   apt-get install -y locales locales-all && \
   apt-get install -y parallel && \
   apt-get install -y pigz && \
-# Install OpenJDK 8
-  apt-get install -y openjdk-8-jdk && \
-  mv /usr/lib/jvm/java-8-openjdk* /usr/lib/jvm/java-8-openjdk
+# Install OpenJDK 11
+  apt-get install -y openjdk-11-jdk && \
+  mv /usr/lib/jvm/java-11-openjdk* /usr/lib/jvm/java-11-openjdk
 
 # Set up user (tracemop)
 RUN useradd -ms /bin/bash -c "tracemop" tracemop && echo "tracemop:docker" | chpasswd && adduser tracemop sudo
@@ -32,26 +32,26 @@ USER tracemop
 
 WORKDIR /home/tracemop/
 
-# Use OpenJDK 8 when building the docker image
-ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk
+# Use OpenJDK 11 when building the docker image
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk
 
 # Install Maven 3.5.4 locally for user
 RUN \
-  wget http://mirrors.ibiblio.org/apache/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz && \
+  wget https://archive.apache.org/dist/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz && \
   tar -xzf apache-maven-3.8.8-bin.tar.gz && mv apache-maven-3.8.8/ apache-maven/ && \
   rm apache-maven-3.8.8-bin.tar.gz && \
   cd /home/tracemop && \
 # Set up the user's configurations
   tail -n +10 ~/.bashrc > ~/tmp-bashrc && \
   mv ~/tmp-bashrc ~/.bashrc && \
-  wget https://github.com/eclipse-aspectj/aspectj/releases/download/V1_9_7/aspectj-1.9.7.jar && \
-  mkdir aspectj-1.9.7 && /usr/lib/jvm/java-8-openjdk/bin/java -jar aspectj-1.9.7.jar -to aspectj-1.9.7 && rm aspectj-1.9.7.jar && \
-  sed -i 's/64M/10240M/g' aspectj-1.9.7/bin/ajc && \
-  echo 'JAVAHOME=/usr/lib/jvm/java-8-openjdk' >> ~/.bashrc && \
+  wget https://github.com/eclipse-aspectj/aspectj/releases/download/V1_9_21_2/aspectj-1.9.21.2.jar && \
+  mkdir aspectj-1.9.21.2 && /usr/lib/jvm/java-11-openjdk/bin/java -jar aspectj-1.9.21.2.jar -to aspectj-1.9.21.2 && rm aspectj-1.9.21.2.jar && \
+  sed -i 's/64M/10240M/g' aspectj-1.9.21.2/bin/ajc && \
+  echo 'JAVAHOME=/usr/lib/jvm/java-11-openjdk' >> ~/.bashrc && \
   echo 'export JAVA_HOME=${JAVAHOME}' >> ~/.bashrc && \
   echo 'export M2_HOME=${HOME}/apache-maven' >> ~/.bashrc && \
   echo 'export MAVEN_HOME=${HOME}/apache-maven' >> ~/.bashrc && \
-  echo 'ASPECTJ_DIR=${HOME}/aspectj-1.9.7' >> ~/.bashrc && \
+  echo 'ASPECTJ_DIR=${HOME}/aspectj-1.9.21.2' >> ~/.bashrc && \
   echo 'export PATH=${M2_HOME}/bin:${JAVAHOME}/bin:${ASPECTJ_DIR}/bin:${ASPECTJ_DIR}/lib/aspectjweaver.jar:${PATH}' >> ~/.bashrc && \
   echo 'export CLASSPATH=${ASPECTJ_DIR}/lib/aspectjtools.jar:${ASPECTJ_DIR}/lib/aspectjrt.jar:${ASPECTJ_DIR}/lib/aspectjweaver.jar:${CLASSPATH}' >> ~/.bashrc
 
