@@ -24,7 +24,7 @@
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjtools</artifactId>
-      <version>1.9.21.2</version>
+      <version>1.9.8</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -35,12 +35,12 @@
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjweaver</artifactId>
-      <version>1.9.21.2</version>
+      <version>1.9.8</version>
     </dependency>
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjrt</artifactId>
-      <version>1.9.21.2</version>
+      <version>1.9.8</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -129,7 +129,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.7.5.201505241946</version>
+        <version>0.8.8</version>
         <executions>
           <execution>
             <id>before-unit-test</id>

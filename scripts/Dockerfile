@@ -44,14 +44,14 @@ RUN \
 # Set up the user's configurations
   tail -n +10 ~/.bashrc > ~/tmp-bashrc && \
   mv ~/tmp-bashrc ~/.bashrc && \
-  wget https://github.com/eclipse-aspectj/aspectj/releases/download/V1_9_21_2/aspectj-1.9.21.2.jar && \
-  mkdir aspectj-1.9.21.2 && /usr/lib/jvm/java-11-openjdk/bin/java -jar aspectj-1.9.21.2.jar -to aspectj-1.9.21.2 && rm aspectj-1.9.21.2.jar && \
-  sed -i 's/64M/10240M/g' aspectj-1.9.21.2/bin/ajc && \
+  wget https://github.com/eclipse-aspectj/aspectj/releases/download/V1_9_8/aspectj-1.9.8.jar && \
+  mkdir aspectj-1.9.8 && /usr/lib/jvm/java-11-openjdk/bin/java -jar aspectj-1.9.8.jar -to aspectj-1.9.8 && rm aspectj-1.9.8.jar && \
+  sed -i 's/64M/10240M/g' aspectj-1.9.8/bin/ajc && \
   echo 'JAVAHOME=/usr/lib/jvm/java-11-openjdk' >> ~/.bashrc && \
   echo 'export JAVA_HOME=${JAVAHOME}' >> ~/.bashrc && \
   echo 'export M2_HOME=${HOME}/apache-maven' >> ~/.bashrc && \
   echo 'export MAVEN_HOME=${HOME}/apache-maven' >> ~/.bashrc && \
-  echo 'ASPECTJ_DIR=${HOME}/aspectj-1.9.21.2' >> ~/.bashrc && \
+  echo 'ASPECTJ_DIR=${HOME}/aspectj-1.9.8' >> ~/.bashrc && \
   echo 'export PATH=${M2_HOME}/bin:${JAVAHOME}/bin:${ASPECTJ_DIR}/bin:${ASPECTJ_DIR}/lib/aspectjweaver.jar:${PATH}' >> ~/.bashrc && \
   echo 'export CLASSPATH=${ASPECTJ_DIR}/lib/aspectjtools.jar:${ASPECTJ_DIR}/lib/aspectjrt.jar:${ASPECTJ_DIR}/lib/aspectjweaver.jar:${CLASSPATH}' >> ~/.bashrc
 

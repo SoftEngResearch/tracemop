@@ -10,14 +10,16 @@
   <name>logicrepository</name>
   <dependencies>
     <dependency>
+    <!-- we should probably update for java 21 to use the jakarta version -->
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
       <version>2.3.1</version>
     </dependency>
     <dependency>
-      <groupId>com.sun.xml.bind</groupId>
-      <artifactId>jaxb-impl</artifactId>
-      <version>2.3.1</version>
+    <!-- we should probably update for java 21 to use the jakarta version -->
+      <groupId>org.glassfish.jaxb</groupId> 
+      <artifactId>jaxb-runtime</artifactId>
+      <version>2.3.9</version>
     </dependency>
   </dependencies>
   <build>

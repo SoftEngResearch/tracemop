@@ -118,7 +118,8 @@ public class LogicRepositoryConnector {
         if (isLogicRepositoryInJar) {
             String executePath = new File(logicJarFilePath).getParent();
 
-            String[] cmdarray = {"java", "-cp", Tool.polishPath(logicJarFilePath) + File.pathSeparator
+            String allLibJars = executePath + File.separator + "*"; //needed for jaxb, it is no longer included in the jdk starting with java 10? 11?
+            String[] cmdarray = {"java", "-cp", Tool.polishPath(allLibJars) + File.pathSeparator
                     + logicPluginFarFilePath + File.pathSeparator
                     + new File(Main.options.jarFilePath).getParent() + "/scala-library.jar",
                     "com.runtimeverification.rvmonitor.logicrepository.Main"};
