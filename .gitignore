@@ -21,6 +21,9 @@ scripts/props/BaseAspect.aj
 scripts/props/classes/*
 scripts/props/*.aj
 scripts/props/*.rvm
+scripts/props-track/BaseAspect.aj
+scripts/props-track/classes/*
+scripts/props-track/*.aj
 
 \#*\#
 .\#*

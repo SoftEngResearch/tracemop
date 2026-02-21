@@ -108,7 +108,7 @@ function install() {
     cp ../BaseAspect_new.aj mop/BaseAspect.aj
     ajc mop/BaseAspect.aj
     
-    ajc TestNameAspect.aj -cp .:${CLASSPATH} -1.8
+    ajc TestNameAspect.aj -cp .:${CLASSPATH} -21
     mv TestNameAspect.class mop/TestNameAspect.class
 
     zip ../track-no-stats-agent.jar mop/TestNameAspect.class

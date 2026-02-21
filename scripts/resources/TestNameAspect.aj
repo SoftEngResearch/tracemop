@@ -6,7 +6,7 @@ public aspect TestNameAspect {
     public static Stack<String> tests = new Stack<>();
     public static String testName = "";
 
-    pointcut testExec() : execution(@(*..Test || *..Before || *..After) * *(..)) && !adviceexecution() && BaseAspect.notwithin();
+    pointcut testExec() : execution(@(*..Test || *..Before || *..After || *..BeforeAll || *..AfterAll || *..BeforeClass || *..AfterClass || *..BeforeEach || *..AfterEach) * *(..)) && !adviceexecution() && BaseAspect.notwithin();
     before() : testExec() {
         String name = thisJoinPointStaticPart.getSourceLocation().getWithinType().getName() + "." +
                         thisJoinPointStaticPart.getSignature().getName() + "(" + 

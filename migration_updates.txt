@@ -1,0 +1,36 @@
+TraceMOP Java 8 to Java 21 Migration
+
+1. Compiler source/target
+  Updated to 21 in javamop, rv-monitor-rt, plugin, javamop-extension, toy-app2 pom.xml files.
+  Root pom.xml stays at jdkVersion=1.8 (JavaCC 5.0 limitation).
+
+2. Dependency upgrades
+  - AspectJ 1.8.13 -> 1.9.21.2 (old ASM couldn't the smoke from Java 21 class files)
+  - JAXB added to logicrepository/pom.xml (removed from JDK since Java 11)
+  - Scala 2.13.18 in ptltl/pom.xml (old version didn't support Java 21)
+  - JaCoCo 0.8.2 -> 0.8.8 in javamop/pom.xml (NoSuchFieldException on 21)
+  - maven-plugin-plugin 3.6.4 -> 3.13.0 in plugin/pom.xml (same ASM issue)
+  - Added <scope>provided</scope> to maven-core in plugin/pom.xml
+
+3. ajc flags
+  Changed -11 to -21 in SeparateAgentGenerator.java and install.sh.
+
+4. JavaParser workaround
+  Added --release 11 in install-javaparser.sh to avoid SequencedCollection
+  name clash between Java 21 and JavaParser's own interface.
+
+5. LogicRepositoryConnector classpath
+  Changed from individual jar paths to lib/* wildcard since JAXB jars are
+  now external dependencies.
+
+6. Dockerfile
+  Updated to openjdk-21, AspectJ 1.9.21.2, updated all paths.
+
+7. TestNameAspect
+  Added @BeforeAll, @AfterAll, @BeforeClass, @AfterClass, @BeforeEach,
+  @AfterEach to the pointcut for better JUnit 4/5 test attribution.
+
+Limitations
+  - JavaCC 5.0 only generates Java 1.8 code (doesn't affect runtime)
+  - AspectJ 1.9.21.2 needs Java 17+ to run (means the jvm building tracemop needs to be java 17+)
+  - Some traces won't have test names (from static init, JDK proxies, etc.)

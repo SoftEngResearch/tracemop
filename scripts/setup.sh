@@ -6,7 +6,7 @@ TRACEMOP_DIR="${SCRIPT_DIR}/tracemop"
 function clone_repository() {
   echo "Cloning tracemop repository"
   pushd ${SCRIPT_DIR}
-  git clone https://github.com/SoftEngResearch/tracemop tracemop
+  git clone -b java21-migration https://github.com/SoftEngResearch/tracemop tracemop
   popd
 }
 

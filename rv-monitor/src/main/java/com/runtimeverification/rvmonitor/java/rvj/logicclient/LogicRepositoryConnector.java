@@ -117,8 +117,8 @@ public class LogicRepositoryConnector {
 
         if (isLogicRepositoryInJar) {
             String executePath = new File(logicJarFilePath).getParent();
-
-            String[] cmdarray = {"java", "-cp", Tool.polishPath(logicJarFilePath) + File.pathSeparator
+            String allLibJars = executePath + File.separator + "*";
+            String[] cmdarray = {"java", "-cp", Tool.polishPath(allLibJars) + File.pathSeparator
                     + logicPluginFarFilePath + File.pathSeparator
                     + new File(Main.options.jarFilePath).getParent() + "/scala-library.jar",
                     "com.runtimeverification.rvmonitor.logicrepository.Main"};
