@@ -1,0 +1,26 @@
+package mop;
+
+import java.util.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if a subclass of ArrayDeque is about to have a null element.
+ *
+ * ArrayDeque does not permit null elements.
+ * http://download.oracle.com/javase/6/docs/api/java/util/ArrayDeque.html
+ *
+ * This property warns if null is about to be inserted.
+ *
+ * @severity error
+ */
+
+ArrayDeque_NonNull() {
+	event e3 before(Object e) :
+		(
+			call(* ArrayDeque.add*(..)) ||
+			call(* ArrayDeque.offer*(..)) ||
+			call(* ArrayDeque.push(..))
+		) && args(Object+)  && args(e) && condition(e == null) {
+	}
+}

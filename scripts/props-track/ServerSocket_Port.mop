@@ -1,0 +1,27 @@
+package mop;
+
+import java.net.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if a ServerSocket object is created with an invalid port.
+ *
+ * The port, a parameter of some ServerSocket's constructors, must be between
+ * 0 and 65535 inclusive.
+ * http://docs.oracle.com/javase/6/docs/api/java/net/ServerSocket.html#ServerSocket%28int,%20int,%20java.net.InetAddress%29
+ *
+ * @severity error
+ */
+
+ServerSocket_Port() {
+	event e262 before(int port) :
+		(
+			call(ServerSocket.new(int)) ||
+			call(ServerSocket.new(int, int)) ||
+			call(ServerSocket.new(int, int, InetAddress))
+		) && args(port, ..)
+	{
+	}
+}
+

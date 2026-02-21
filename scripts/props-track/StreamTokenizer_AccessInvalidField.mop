@@ -1,0 +1,74 @@
+package mop;
+
+import java.io.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Prevents access to invalidated fields of StreamTokenizer.
+ *
+ * nextToken() parses the next token from the input stream, and returns the
+ * type of the token: TT_EOF, TT_EOL (the end of line), TT_NUMBER or TT_WORD.
+ * The actual value of the token is stored at sval (or nval) only when the type
+ * is TT_WORD (or TT_NUMBER).
+ * http://download.oracle.com/javase/6/docs/api/java/io/StreamTokenizer.html#nextToken%28%29
+ *
+ * Reading sval for a TT_NUMBER typed token yields an old junk value. This
+ * specification prevents this incorrect field access.
+ *
+ * @severity warning
+ */
+
+StreamTokenizer_AccessInvalidField(StreamTokenizer s) {
+	event e353 after(StreamTokenizer s) returning(int t) :
+		call(* StreamTokenizer+.nextToken(..)) && target(s) &&
+		condition(t == StreamTokenizer.TT_WORD) {}
+
+	event e352 after(StreamTokenizer s) returning(int t) :
+		call(* StreamTokenizer+.nextToken(..)) && target(s) &&
+		condition(t == StreamTokenizer.TT_NUMBER) {}
+
+	event e351 after(StreamTokenizer s) returning(int t) :
+		call(* StreamTokenizer+.nextToken(..)) && target(s) &&
+		condition(t == StreamTokenizer.TT_EOL) {}
+
+	event e350 after(StreamTokenizer s) returning(int t) :
+		call(* StreamTokenizer+.nextToken(..)) && target(s) &&
+		condition(t == StreamTokenizer.TT_EOF) {}
+
+	event e355 before(StreamTokenizer s) :
+		get(* StreamTokenizer.sval) && target(s) {}
+
+	event e354 before(StreamTokenizer s) :
+		get(* StreamTokenizer.nval) && target(s) {}
+
+	fsm :
+		valid [
+			e353 -> read_word
+			e352 -> read_num
+			e351 -> valid
+			e350 -> done
+		]
+		read_word [
+			e355 -> read_word
+			e353 -> read_word
+			e352 -> read_num
+			e351 -> valid
+			e350 -> done
+		]
+		read_num [
+			e354 -> read_num
+			e353 -> read_word
+			e352 -> read_num
+			e351 -> valid
+			e350 -> done
+		]
+		done [
+		]
+
+	@fail {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "The caller attempted to read an invalidated value. " + __LOC);
+		__RESET;
+	}
+}

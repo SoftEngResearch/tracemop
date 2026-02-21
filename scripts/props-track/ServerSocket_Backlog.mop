@@ -1,0 +1,31 @@
+package mop;
+
+import java.net.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if a ServerSocket object is constructed with an invalid backlog
+ * value.
+ *
+ * The backlog argument must be a positive value greater than 0. If the value
+ * passed if equal or less than 0, then the default value will be assumed.
+ * http://docs.oracle.com/javase/6/docs/api/java/net/ServerSocket.html#ServerSocket%28int,%20int%29
+ *
+ * @severity warning
+ */
+ServerSocket_Backlog() {
+	event e252 before(int backlog) :
+		(
+			call(ServerSocket.new(int, int)) ||
+			call(ServerSocket.new(int, int, InetAddress))
+		) && args(*, backlog, ..)
+	{
+	}
+
+	event e253 before(int backlog) :
+		call(* ServerSocket+.bind(SocketAddress, int)) && args(*, backlog)
+	{
+	}
+}
+

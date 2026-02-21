@@ -1,0 +1,32 @@
+package mop;
+
+import java.util.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if the argument of Arrays.sort(Object[]) or Arrays.sort(Object[],
+ * int, int) is not comparable.
+ *
+ * All elements in the argument of Arrays.sort() must implement the Comparable
+ * interface, and they must be mutually comparable.
+ * http://docs.oracle.com/javase/6/docs/api/java/util/Arrays.html#sort%28java.lang.Object[]%29
+ *
+ * This property verifies that each element implements the Comparable
+ * interface, and comparing each pair of elements does not raise a
+ * ClassCastException. This property requires O(n^2) time for n elements.
+ *
+ * @severity error
+ */
+
+Arrays_Comparable() {
+	event e7 before(Object[] arr) :
+		target(Arrays) &&
+		(
+			call(void Arrays.sort(Object[])) ||
+			call(void Arrays.sort(Object[], ..))
+		) && args(arr, ..) {
+	}
+}
+

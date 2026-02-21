@@ -1,0 +1,41 @@
+package mop;
+
+import java.net.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if a large receive buffer is set after the server socket is bound.
+ *
+ * It is possible to change the value subsequently, by calling
+ * ServerSocket.setReceiveBufferSize(int). However, if the application wishes
+ * to allow a receive window larger than 64K bytes, as defined by RFC1323 then
+ * the proposed value must be set in the ServerSocket before it is bound to a
+ * local address.
+ * http://docs.oracle.com/javase/6/docs/api/java/net/ServerSocket.html#setReceiveBufferSize%28int%29
+ *
+ * @severity error
+ */
+
+ServerSocket_LargeReceiveBuffer(ServerSocket sock) {
+	creation event e255 after() returning(ServerSocket sock) :
+		call(ServerSocket.new(int, ..)) {}
+
+	creation event e256 after() returning(ServerSocket sock) :
+		call(ServerSocket.new()) {}
+
+	event e254 before(ServerSocket sock) :
+		call(* ServerSocket+.bind(..)) && target(sock) {}
+
+	event e257 before(ServerSocket sock, int size) :
+		call(* ServerSocket+.setReceiveBufferSize(int)) &&
+		target(sock) && args(size) && condition(size > 65536) {}
+
+	ere : (e255 | e256 e257* e254+) e257
+
+	@match {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "A receive window large than 64K bytes must be set before the server socket is bound.");
+	}
+}
+

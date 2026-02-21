@@ -1,0 +1,55 @@
+package mop;
+
+import java.io.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if an unconnected PipedInputStream object performs a read operation.
+ *
+ * If the pipe is broken, read() fails and a runtime exception is raised.
+ * http://download.oracle.com/javase/6/docs/api/java/io/PipedInputStream.html#read%28%29
+ *
+ * @severity error
+ */
+PipedInputStream_UnconnectedRead(PipedInputStream i) {
+	creation event e195 after() returning(PipedInputStream i) :
+		call(PipedInputStream+.new()) {}
+	creation event e197 after() returning(PipedInputStream i) :
+		call(PipedInputStream+.new(PipedOutputStream+)) {}
+
+	event e196 before(PipedInputStream i) :
+		call(PipedOutputStream+.new(PipedInputStream+)) && args(i) {}
+
+	event e193 before(PipedInputStream i) :
+		call(* PipedOutputStream+.connect(PipedInputStream+)) && args(i) {}
+	event e194 before(PipedInputStream i) :
+		call(* PipedInputStream+.connect(PipedOutputStream+)) && target(i) {}
+
+	event e198 before(PipedInputStream i) :
+		(
+			call(* PipedInputStream+.read(..)) ||
+			call(* PipedInputStream+.receive(..)) ||
+			call(* PipedInputStream+.available(..))
+		) && target(i) {}
+
+	fsm :
+		initial [
+			e195 -> unconnected
+			e197 -> connected
+		]
+		unconnected [
+			e196 -> connected
+			e193 -> connected
+			e194 -> connected
+		]
+		connected [
+			e198 -> connected
+		]
+
+	@fail {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "An unconnected PipedInputStream performed read() operation.");
+	}
+}
+

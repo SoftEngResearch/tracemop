@@ -1,0 +1,27 @@
+package mop;
+
+import java.net.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if the arguments for an InetAddress.isReachable() call are invalid.
+ *
+ * Both the timeout parameter and the ttl parameter must be 0 or a positive
+ * value.
+ * http://docs.oracle.com/javase/6/docs/api/java/net/InetAddress.html#isReachable%28int%29
+ *
+ * @severity error
+ */
+InetAddress_IsReachable() {
+	event e98 before(int timeout) :
+		call(* InetAddress+.isReachable(int)) && args(timeout)
+	{
+	}
+
+	event e98 before(int ttl, int timeout) :
+		call(* InetAddress+.isReachable(NetworkInterface, int, int)) && args(*, ttl, timeout)
+	{
+	}
+}
+

@@ -1,0 +1,23 @@
+package mop;
+
+import java.io.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns when the argument to decode is wrong
+ *
+ * According to the manual, the argument cannot contain any whitespace.
+ * Also, there is a format to follow. 
+ * http://docs.oracle.com/javase/6/docs/api/java/lang/Integer.html#decode%28java.lang.String%29
+ *
+ * @severity error
+ */
+Integer_BadDecodeArg() {
+
+    event e112 before(Integer i, String nm) : 
+        call(* Integer.decode(String)) && args(nm) && target(i) {
+    }
+}
+

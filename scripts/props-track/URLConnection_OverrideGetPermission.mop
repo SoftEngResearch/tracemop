@@ -1,0 +1,25 @@
+package mop;
+
+import java.net.*;
+import java.lang.reflect.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if a subclass of URLConnection does not override getPermission().
+ *
+ * Subclasses of URLConnection should override the default implementation of
+ * getPermission().
+ * http://docs.oracle.com/javase/6/docs/api/java/net/URLConnection.html#getPermission%28%29
+ *
+ * This property warns if a class or one of its superclass does not override
+ * getPermission().
+ *
+ * @severity error
+ */
+
+URLConnection_OverrideGetPermission() {
+	event e382 after() : staticinitialization(URLConnection+) {
+	}
+}
+

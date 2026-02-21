@@ -1,0 +1,24 @@
+package mop;
+
+import java.io.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Suggests if the constructor of String is used.
+ *
+ * According to the manual, using the constructor is likely to be slower. 
+ * Rather, one should use toString() on the StringBuilder.
+ * http://docs.oracle.com/javase/6/docs/api/java/lang/String.html#String%28java.lang.StringBuilder%29
+ *
+ * @severity suggestion
+ */
+ 
+String_UseStringBuilder() {
+    event e363 after() returning(String b): 
+        call(String.new(StringBuilder)) {
+        }
+    
+}
+

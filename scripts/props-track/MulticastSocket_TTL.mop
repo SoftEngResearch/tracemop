@@ -1,0 +1,26 @@
+package mop;
+
+import java.net.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if an invalid TTL value is set for a MulticastSocket object.
+ *
+ * A valid TTL value is between 0 and 255 inclusive.
+ * http://docs.oracle.com/javase/6/docs/api/java/net/InetSocketAddress.html#InetSocketAddress%28int%29
+ *
+ * @severity error
+ */
+MulticastSocket_TTL() {
+	event e160 before(byte ttl) :
+		call(* MulticastSocket+.setTTL(byte)) && args(ttl)
+	{
+	}
+
+	event e161 before(int ttl) :
+		call(* MulticastSocket+.setTimeToLive(int)) && args(ttl)
+	{
+	}
+}
+

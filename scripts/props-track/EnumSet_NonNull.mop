@@ -1,0 +1,26 @@
+package mop;
+
+import java.util.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if null is added to an EnumSet object.
+ *
+ * EnumSet does not permit null elements.
+ * http://docs.oracle.com/javase/6/docs/api/java/util/EnumSet.html
+ *
+ * This property warns if null is about to be inserted.
+ *
+ * @severity error
+ */
+
+EnumSet_NonNull() {
+	event e90 before(Object e) :
+		call(* EnumSet+.add(Object)) && args(e) && condition(e == null) {
+	}
+	event e90 before(Collection c) :
+		call(* EnumSet+.addAll(Collection)) && args(c) {
+	}
+}
+

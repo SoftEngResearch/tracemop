@@ -1,0 +1,23 @@
+package mop;
+
+import java.io.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns when the argument to decode is wrong
+ *
+ * According to the manual, the argument cannot contain any whitespace.
+ * Also, there is a format to follow. 
+ * http://docs.oracle.com/javase/6/docs/api/java/lang/Long.html#decode%28java.lang.String%29
+ *
+ * @severity error
+ */
+Long_BadDecodeArg() {
+
+    event e141 before(Long l, String nm) : 
+        call(* Long.decode(String)) && args(nm) && target(l) {
+    }
+}
+

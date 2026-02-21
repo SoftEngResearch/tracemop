@@ -1,0 +1,71 @@
+package mop;
+
+import java.util.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if next()/previous() is invoked when hasNext()/hasPrevious() is not
+ * invoked or returns false.
+ *
+ * This property requires that hasNext()/hasPrevious() be called before
+ * next()/previous() and that hasNext()/hasPrevious() return true.
+ *
+ * @severity warning
+ */
+
+ListIterator_hasNextPrevious(ListIterator i) {
+	event e130 after(ListIterator i) returning(boolean b) :
+		call(* ListIterator.hasNext()) && target(i) &&
+		condition(b) {}
+	event e129 after(ListIterator i) returning(boolean b) :
+		call(* ListIterator.hasNext()) && target(i) &&
+		condition(!b) {}
+	event e133 before(ListIterator i) :
+		call(* ListIterator.next()) && target(i) {}
+
+	event e132 after(ListIterator i) returning(boolean b) :
+		call(* ListIterator.hasPrevious()) && target(i) &&
+		condition(b) {}
+	event e131 after(ListIterator i) returning(boolean b) :
+		call(* ListIterator.hasPrevious()) && target(i) &&
+		condition(!b) {}
+	event e134 before(ListIterator i) :
+		call(* ListIterator.previous()) && target(i) {}
+
+	fsm :
+		na [
+			e130 -> nextavailable
+			e129 -> na
+			e132 -> prevavailable
+			e131 -> na
+		]
+		nextavailable [
+			e132 -> bothavailable
+			e131 -> nextavailable
+			e130 -> nextavailable
+			e129 -> na
+			e133 -> prevavailable
+		]
+		prevavailable [
+			e130 -> bothavailable
+			e129 -> prevavailable
+			e132 -> prevavailable
+			e131 -> na
+			e134 -> nextavailable
+		]
+		bothavailable [
+			e130 -> bothavailable
+			e129 -> prevavailable
+			e132 -> bothavailable
+			e131 -> nextavailable
+			e133 -> prevavailable
+			e134 -> nextavailable
+		]
+
+	@fail {
+		RVMLogging.out.println(Level.WARNING, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.WARNING, "ListIterator.hasNext()/hasPrevious() was not called before calling next()/previous().");
+	}
+}
+

@@ -1,0 +1,27 @@
+package mop;
+
+import java.io.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns when arguments to parseShort are wrong.
+ *
+ * According to the manual, the first argument cannot be null or of length zero.
+ * Also, radix should be in the range.
+ * http://docs.oracle.com/javase/6/docs/api/java/lang/Short.html#parseShort%28java.lang.String,%20int%29
+ *
+ * @severity warning
+ */
+Short_BadParsingArgs() {
+	event e279 before(String s, int radix) : 
+		call(* Short.parseShort(String, int)) && args(s, radix) {
+		}
+
+	event e280 before(String s) : 
+		call(* Short.parseShort(String)) && args(s) {
+		}
+		
+}
+

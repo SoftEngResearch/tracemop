@@ -1,0 +1,32 @@
+package mop;
+
+import java.util.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if PriorityQueue is about to have a null element.
+ *
+ * PriorityQueue does not permit null elements.
+ * http://docs.oracle.com/javase/6/docs/api/java/util/PriorityQueue.html
+ *
+ * This property warns if null is about to be inserted.
+ *
+ * @severity error
+ */
+
+PriorityQueue_NonNull() {
+	event e212 before(Object e) :
+		(
+			call(* Collection+.add*(..)) ||
+			call(* Queue+.offer*(..))
+		) && target(PriorityQueue) && args(e) && condition(e == null) {
+	}
+
+	event e212 before(Collection c) :
+		call(* Collection+.addAll(Collection)) &&
+		target(PriorityQueue) && args(c) {
+	}
+}
+

@@ -1,0 +1,27 @@
+package mop;
+
+import java.io.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns when arguments to parseLong are wrong.
+ *
+ * According to the manual, the first argument cannot be null or of length zero.
+ * Also, radix should be in the range.
+ * http://docs.oracle.com/javase/6/docs/api/java/lang/Long.html#parseLong%28java.lang.String,%20int%29
+ *
+ * @severity warning
+ */
+Long_BadParsingArgs() {
+	event e142 before(String s, int radix) : 
+		call(* Long.parseLong(String, int)) && args(s, radix) {
+		}
+
+	event e143 before(String s) : 
+		call(* Long.parseLong(String)) && args(s) {
+		}
+		
+}
+

@@ -1,0 +1,49 @@
+package mop;
+
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if a shutdown hook attempts to call exit().
+ *
+ * According to the manual, calling exit() inside a shutdown hook will block indefinitely.
+ * http://docs.oracle.com/javase/6/docs/api/java/lang/Runtime.html
+ * A shutdown hook, which is started by the VM during the shutdown sequence,
+ * should not invoke System.exit() because it may lead to deadlocks. This
+ * specification nullifies the invocation and outputs an error message,
+ * instead.
+ *
+ * @severity error
+ */
+ShutdownHook_SystemExit(Thread t) {
+	creation event e289 before(Thread t) : call(* Runtime+.addShutdownHook(..)) && args(t) {}
+	creation event e291 before(Thread t) : call(* Runtime+.removeShutdownHook(..)) && args(t) {}
+	event e290 before(Thread t) : startThread() && thread(t) {}
+	event e288 void around(Thread t) :
+		(
+			call(* System.exit(..))
+		)
+		&& thread(t) {__SKIP;}
+
+	fsm :
+		unregistered [
+			e289 -> registered
+		]
+		registered [
+			e291 -> unregistered
+			e290 -> started
+		]
+		started [
+			e288 -> unsafe
+		]
+		unsafe [
+			e288 -> unsafe
+		]
+
+	@unsafe {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "Invoking System.exit() in a shutdown hook was suppressed because it may lead to deadlocks.");
+	}
+}
+

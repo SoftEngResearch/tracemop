@@ -1,0 +1,38 @@
+package mop;
+
+import java.util.*;
+import java.lang.*;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging;
+import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
+
+/**
+ * Warns if the argument of Collections.sort(List<T>, Comparator) is not comparable.
+ *
+ * All elements in the argument of Collections.sort(List<T>, Comparator) must
+ * be mutually comparable.
+ * http://docs.oracle.com/javase/6/docs/api/java/util/Collections.html#sort%28java.util.List%29
+ *
+ * Similarly, the argument of Collections.min(Collectio<T>, Comparator) and
+ * Collections.max(Collection<T>, Comparator) must satisfy the requirement.
+ * http://docs.oracle.com/javase/6/docs/api/java/util/Collections.html#min%28java.util.Collection,%20java.util.Comparator%29
+ * http://docs.oracle.com/javase/6/docs/api/java/util/Collections.html#max%28java.util.Collection,%20java.util.Comparator%29
+ *
+ * This property verifies that comparing each pair of elements does not raise
+ * a ClassCastException. This property requires O(n^2) time for n elements.
+ *
+ * @severity error
+ */
+
+Collections_Comparable() {
+	event e46 before(List list, Comparator comp) :
+		call(void Collections.sort(List, Comparator)) && args(list, comp) {
+	}
+
+	event e45 before(Collection col, Comparator comp) :
+		(
+			call(* Collections.min(Collection, Comparator)) ||
+			call(* Collections.max(Collection, Comparator))
+		) && args(col, comp) {
+	}
+}
+
