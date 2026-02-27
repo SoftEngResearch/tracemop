@@ -35,11 +35,11 @@ WORKDIR /home/tracemop/
 # Use OpenJDK 21 when building the docker image
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk
 
-# Install Maven 3.8.8 locally for user
+# Install Maven 3.9.6 locally for user (3.9.x required for Java 21 + Sisu extension support)
 RUN \
-  wget https://archive.apache.org/dist/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz && \
-  tar -xzf apache-maven-3.8.8-bin.tar.gz && mv apache-maven-3.8.8/ apache-maven/ && \
-  rm apache-maven-3.8.8-bin.tar.gz && \
+  wget https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz && \
+  tar -xzf apache-maven-3.9.6-bin.tar.gz && mv apache-maven-3.9.6/ apache-maven/ && \
+  rm apache-maven-3.9.6-bin.tar.gz && \
   cd /home/tracemop && \
 # Set up the user's configurations
   tail -n +10 ~/.bashrc > ~/tmp-bashrc && \
