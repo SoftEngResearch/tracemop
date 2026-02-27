@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Collect traces
-# Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false]
+# Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false] [path-to-javamop-extension]
 #
 SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 
@@ -10,17 +10,26 @@ SHA=$2
 OUTPUT_DIR=$3
 TIMED=${4:-false}
 PER_TEST=${5:-false}
+PATH_TO_EXTENSION=${6}
 PROJECT_NAME=$(echo ${REPO} | tr / -)
 
 ALREADY_CHECKED=false
 TMP_DIR=/tmp/tracemop-${PROJECT_NAME}
 
 if [[ -z ${OUTPUT_DIR} ]]; then
-  echo "Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false]"
+  echo "Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false] [path-to-javamop-extension]"
   exit 1
 else
   if [[ ! ${OUTPUT_DIR} =~ ^/.* ]]; then
     OUTPUT_DIR=${SCRIPT_DIR}/${OUTPUT_DIR}
+  fi
+
+  if [[ -n ${PATH_TO_EXTENSION} ]]; then
+    if [[ ! ${PATH_TO_EXTENSION} =~ ^/.* ]]; then
+      PATH_TO_EXTENSION=${SCRIPT_DIR}/${PATH_TO_EXTENSION}
+    fi
+  else
+    PATH_TO_EXTENSION=${SCRIPT_DIR}/../extensions/javamop-extension-1.0.jar
   fi
 
   if [[ ${PER_TEST} == "true" ]]; then
@@ -30,28 +39,7 @@ else
   mkdir -p ${OUTPUT_DIR}/logs
 fi
 
-# Direct agent attachment (bypasses extension which has Sisu issues on Java 21)
 SUREFIRE_GOAL="org.apache.maven.plugins:maven-surefire-plugin:3.1.2:test"
-AGENT_JAR="${OUTPUT_DIR}/repo/javamop-agent/javamop-agent/1.0/javamop-agent-1.0.jar"
-
-# Java 21+ module system: open JDK internals so AspectJ can weave all classes
-JAVA_VERSION=$(java -version 2>&1 | head -1 | sed 's/.*"\([0-9]*\).*/\1/')
-ADD_OPENS=""
-if [[ ${JAVA_VERSION} -ge 9 ]]; then
-  ADD_OPENS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED"
-fi
-
-# Create JVM wrapper to inject agent into surefire's forked JVM.
-# Using -Djvm=<wrapper> instead of -DargLine because projects that override
-# <argLine> in their POM ignore the CLI property, causing the agent to never load.
-JAVA_WRAPPER=${OUTPUT_DIR}/java-wrapper.sh
-JAVA_BIN=${JAVA_HOME:+${JAVA_HOME}/bin/java}
-JAVA_BIN=${JAVA_BIN:-java}
-cat > ${JAVA_WRAPPER} << WRAPPER_EOF
-#!/bin/bash
-exec ${JAVA_BIN} -javaagent:${AGENT_JAR} ${ADD_OPENS} "\$@"
-WRAPPER_EOF
-chmod +x ${JAVA_WRAPPER}
 
 export TRACEDB_CONFIG_PATH="${SCRIPT_DIR}/.trace-db.config"
 echo -e "db=memory\ndumpDB=false" > ${TRACEDB_CONFIG_PATH}
@@ -126,7 +114,7 @@ function collect() {
   if [[ ${PER_TEST} == "true" ]]; then
     collect_per_test
   else
-    (time mvn ${SUREFIRE_GOAL} -Djava.io.tmpdir=${TMP_DIR} -Dmaven.repo.local=${OUTPUT_DIR}/repo -Dsurefire.exitTimeout=86400 -Djvm=${JAVA_WRAPPER} -DargLine="-Xmx500g -XX:-UseGCOverheadLimit") &> ${OUTPUT_DIR}/logs/traces.log
+    (time mvn ${SUREFIRE_GOAL} -Djava.io.tmpdir=${TMP_DIR} -Dmaven.repo.local=${OUTPUT_DIR}/repo -Dsurefire.exitTimeout=86400 -Dmaven.ext.class.path=${PATH_TO_EXTENSION}) &> ${OUTPUT_DIR}/logs/traces.log
     local status=$?
     
     if [[ ${status} -ne 0 ]]; then
@@ -149,7 +137,7 @@ function collect_per_test() {
       mkdir -p ${TMP_DIR} && chmod -R +w ${TMP_DIR} && rm -rf ${TMP_DIR} && mkdir -p ${TMP_DIR}
       local start=$(date +%s%3N)
       
-      (time mvn ${SUREFIRE_GOAL} -Djava.io.tmpdir=${TMP_DIR} -Dtest=${test_case} -Dmaven.repo.local=${OUTPUT_DIR}/repo -Dsurefire.exitTimeout=86400 -Djvm=${JAVA_WRAPPER} -DargLine="-Xmx500g -XX:-UseGCOverheadLimit") &> ${OUTPUT_DIR}/logs/test-${test_case}.log
+      (time mvn ${SUREFIRE_GOAL} -Djava.io.tmpdir=${TMP_DIR} -Dtest=${test_case} -Dmaven.repo.local=${OUTPUT_DIR}/repo -Dsurefire.exitTimeout=86400 -Dmaven.ext.class.path=${PATH_TO_EXTENSION}) &> ${OUTPUT_DIR}/logs/test-${test_case}.log
       local status=$?
       if [[ ${status} -ne 0 ]]; then
         echo "[TRACEMOP] ERROR: Unable to collect traces for test ${test_case}"

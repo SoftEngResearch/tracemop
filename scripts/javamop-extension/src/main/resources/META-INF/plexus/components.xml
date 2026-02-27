@@ -1,0 +1,9 @@
+<component-set>
+  <components>
+    <component>
+      <role>org.apache.maven.eventspy.EventSpy</role>
+      <role-hint>javamop</role-hint>
+      <implementation>org.tracemop.JavaMOPExtension</implementation>
+    </component>
+  </components>
+</component-set>

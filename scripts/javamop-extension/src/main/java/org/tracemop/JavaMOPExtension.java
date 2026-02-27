@@ -18,6 +18,17 @@ public class JavaMOPExtension extends AbstractEventSpy {
     private static final String MOP_AGENT_STRING = "-javaagent:${settings.localRepository}/javamop-agent/" +
             "javamop-agent/1.0/javamop-agent-1.0.jar";
 
+    private static String getAddOpens() {
+        int version = Runtime.version().feature();
+        if (version >= 9) {
+            return " --add-opens java.base/java.lang=ALL-UNNAMED"
+                 + " --add-opens java.base/java.util=ALL-UNNAMED"
+                 + " --add-opens java.base/java.io=ALL-UNNAMED"
+                 + " --add-opens java.base/java.net=ALL-UNNAMED";
+        }
+        return "";
+    }
+
     private void updateConfig(Xpp3Dom config) {
         Xpp3Dom argLine = config.getChild("argLine");
 
@@ -28,6 +39,7 @@ public class JavaMOPExtension extends AbstractEventSpy {
             jvmOptions = jvmOptions + " -Xmx500g -XX:-UseGCOverheadLimit";
         if (ajcCache)
             jvmOptions = jvmOptions + " -Daj.weaving.cache.enabled=true -Daj.weaving.cache.dir=/tmp/aspectj-cache/";
+        jvmOptions = jvmOptions + getAddOpens();
 
         String agentPath = System.getenv("MOP_AGENT_PATH") != null ? System.getenv("MOP_AGENT_PATH") : MOP_AGENT_STRING;
 
