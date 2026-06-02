@@ -43,7 +43,15 @@ public class SuffixMonitor extends Monitor {
 
     public SuffixMonitor(String outputName, RVMonitorSpec rvmSpec, OptimizedCoenableSet coenableSet,
                          boolean isOutermost) throws RVMException {
-        super(outputName, rvmSpec, coenableSet, isOutermost);
+        this(outputName, outputName, rvmSpec, coenableSet, isOutermost);
+    }
+
+    /** {@code agentName} is the agent-class prefix (e.g. {@code MultiSpec_1}
+     *  under {@code -merge}) — see {@link Monitor#Monitor(String, String,
+     *  RVMonitorSpec, OptimizedCoenableSet, boolean)}. */
+    public SuffixMonitor(String agentName, String outputName, RVMonitorSpec rvmSpec,
+                         OptimizedCoenableSet coenableSet, boolean isOutermost) throws RVMException {
+        super(agentName, outputName, rvmSpec, coenableSet, isOutermost);
 
         isDefined = rvmSpec.isSuffixMatching();
 
@@ -56,9 +64,9 @@ public class SuffixMonitor extends Monitor {
             }
 
             if (rvmSpec.getPropertiesAndHandlers().size() == 0) {
-                innerMonitor = new RawMonitor(outputName, rvmSpec, coenableSet, false);
+                innerMonitor = new RawMonitor(agentName, outputName, rvmSpec, coenableSet, false);
             } else {
-                innerMonitor = new BaseMonitor(outputName, rvmSpec, coenableSet, false);
+                innerMonitor = new BaseMonitor(agentName, outputName, rvmSpec, coenableSet, false);
             }
             events = rvmSpec.getEvents();
 
@@ -82,9 +90,9 @@ public class SuffixMonitor extends Monitor {
             }
         } else {
             if (rvmSpec.getPropertiesAndHandlers().size() == 0) {
-                innerMonitor = new RawMonitor(outputName, rvmSpec, coenableSet, isOutermost);
+                innerMonitor = new RawMonitor(agentName, outputName, rvmSpec, coenableSet, isOutermost);
             } else {
-                innerMonitor = new BaseMonitor(outputName, rvmSpec, coenableSet, isOutermost);
+                innerMonitor = new BaseMonitor(agentName, outputName, rvmSpec, coenableSet, isOutermost);
             }
         }
 

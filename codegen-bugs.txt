@@ -1,0 +1,70 @@
+Native IndexingTree codegen — known bugs
+=========================================
+Scope: the -nativeindexingtree emitters under
+  rv-monitor/src/main/java/com/runtimeverification/rvmonitor/java/rvj/output/nativetree/
+Status: both bugs below are INHERITED from the stock/old codegen, not introduced
+by the native rewrite. Fixing either in native diverges from the reference
+outputs we diff against — see "Fix posture" on each.
+
+
+Bug 1 — Lock leaked on exception (no try/finally) — hang risk
+-------------------------------------------------------------
+Every dispatch method emits:
+
+    while (!<Spec>_RVMLock.tryLock()) Thread.yield();
+    ... monitor.event_*(), @category handlers (USER CODE), defineTo, tree puts ...
+    <Spec>_RVMLock.unlock();
+
+Native locations: e.g. NativeDispatch.java:186 (acquire) / :228 (release); same
+shape in all five dispatch shapes (singleton, 1-param suffix, multi-param suffix,
+general, zero-param broadcast).
+
+If any user @category handler body, event action, clone(), or tree call throws,
+unlock() is never reached. Because the lock is acquired with a tryLock/Thread.yield
+spin, every subsequent event on that spec spins forever — a silent process hang,
+not a crash.
+
+Inherited from stock:
+  - Emitter side: GlobalLock.getAcquireCode()/getReleaseCode()
+    (rv-monitor/.../output/combinedoutputcode/GlobalLock.java:37-64) emit the bare
+    tryLock/unlock strings with no try/finally wrapping.
+  - Confirmed in reference RuntimeMonitor outputs (grep "finally" -> 0):
+      Map_UnsafeIteratorRuntimeMonitor.java, javamop HasNextRuntimeMonitor.java
+    all use the identical while(!RVMLock.tryLock()){Thread.yield();} ... unlock();
+
+Fix: wrap the dispatch body in try { ... } finally { <Spec>_RVMLock.unlock(); }.
+Fix posture: SAFE to diverge — pure robustness, no observable happy-path behavior
+change. Recommended.
+
+
+Bug 2 — macroSub rewrites `return;` with an unanchored regex
+------------------------------------------------------------
+NativeMonitorClass.java:406:
+
+    .replaceAll("return;", "return true;")
+
+replaceAll is a regex match ANYWHERE in the string. Any token ending in `return;`
+(e.g. identifier `myreturn;`, or the literal substring `return;` inside a user
+message string or comment in an event action) is corrupted to `... true;`.
+Intent: rewrite bare void `return` statements for our boolean event methods.
+Correct anchor would be something like (?<![\w.])return\s*; .
+The other replaceAll macro calls (__RESET, __DEFAULT_MESSAGE, __LOC, __SKIP) share
+the same unanchored-match style but are lower risk.
+
+Inherited from stock:
+  - BaseMonitor.java:354-356 has the IDENTICAL
+        eventActionStr = eventActionStr.replaceAll("return;", "return true;");
+    (gated on !Main.options.generateVoidMethods). Native copied it verbatim, with
+    the same __DEFAULT_MESSAGE-before-__LOC ordering.
+
+Fix: anchor the regex.
+Fix posture: LEAVE matching stock unless a real spec's action/message actually
+contains a `return;` substring — changing it would make native output diverge from
+stock on affected specs. Low priority precisely because it predates this work.
+
+
+Note
+----
+Both bugs predate the native indexing-tree work. The native-specific issues with no
+stock analog (universal-set GC retention for zero-param specs; multi-source
+defineTo) are tracked separately in docs/v1-status.md.

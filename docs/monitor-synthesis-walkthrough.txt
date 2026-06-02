@@ -1,0 +1,481 @@
+================================================================================
+Monitor Synthesis Walkthrough
+================================================================================
+
+This document walks through how a .mop specification becomes executable
+monitoring code, using Iterator_HasNext as a simple example and
+Collection_UnsafeIterator as a general (multi-parameter) example.
+
+
+================================================================================
+EXAMPLE 1: Iterator_HasNext (suffix spec, 1 parameter)
+================================================================================
+
+Specification (Iterator_HasNext.mop)
+------------------------------------
+  Iterator_HasNext(Iterator i) {
+      creation event hasnexttrue after(Iterator i) returning(boolean b) :
+          call(* Iterator.hasNext()) && target(i) {}
+      event next before(Iterator i) :
+          call(* Iterator.next()) && target(i) {}
+
+      ltl: [](next => (*) hasnexttrue)
+
+      @violation {
+          RVMLogging.out.println("hasNext() not called before next()");
+      }
+  }
+
+This says: "For every Iterator i, always: if next() is called, hasNext()
+must have returned true before it."
+
+
+Step 1: Parse Spec
+------------------
+  Parameters:       (Iterator i)     -- 1 parameter
+  Events:           hasnexttrue, next
+  Creation event:   hasnexttrue      -- carries all params -> suffix spec
+  Formula:          LTL: [](next => (*) hasnexttrue)
+  Handler:          @violation { ... }
+
+  isGeneral() = false
+    Because: the creation event hasnexttrue carries Iterator i,
+    which is ALL spec parameters. So every monitor is fully bound
+    at creation time.
+
+
+Step 2: Logic Repository (LTL -> FSM)
+--------------------------------------
+  Input:   [](next => (*) hasnexttrue)
+  Plugin:  ltl.jar
+
+  Output FSM:
+    States: {0, 1, 2, 3}
+      0 = initial (no events seen)
+      1 = VIOLATION (next without prior hasNext)
+      2 = safe (hasNext seen, waiting for next)
+      3 = sink/error
+
+    Transitions:
+      State 0 + hasnexttrue -> State 2  (good: called hasNext first)
+      State 0 + next        -> State 1  (BAD: next without hasNext)
+      State 2 + hasnexttrue -> State 2  (still safe)
+      State 2 + next        -> State 0  (consumed the hasNext, back to start)
+
+  As arrays:
+    Prop_1_transition_hasnexttrue = {2, 3, 2, 3}
+    Prop_1_transition_next        = {1, 3, 0, 3}
+
+  Category condition:
+    Prop_1_Category_violation = (state == 1)
+
+
+Step 3: Code Generation - Monitor Class
+----------------------------------------
+  class Iterator_HasNextMonitor extends AbstractAtomicMonitor
+      implements Cloneable, RVMObject {
+
+      // --- FSM State ---
+      // Packed into AtomicInteger for lock-free CAS updates
+      private final AtomicInteger pairValue;
+      //   bits [1:0] = state (0-3)
+      //   bits [31:2] = lastEvent + 1
+
+      // --- Transition Tables (static, shared by all monitors) ---
+      static final int Prop_1_transition_hasnexttrue[] = {2, 3, 2, 3};
+      static final int Prop_1_transition_next[]        = {1, 3, 0, 3};
+
+      // --- Category Flag ---
+      volatile boolean Prop_1_Category_violation = false;
+
+      // --- Constructor ---
+      Iterator_HasNextMonitor() {
+          pairValue = new AtomicInteger(calculatePairValue(-1, 0));
+          // state=0, lastEvent=-1 (none)
+      }
+
+      // --- Event Method: hasnexttrue ---
+      final boolean Prop_1_event_hasnexttrue(Iterator i) {
+          int nextstate = handleEvent(0, Prop_1_transition_hasnexttrue);
+          Prop_1_Category_violation = nextstate == 1;
+          return true;
+      }
+
+      // --- Event Method: next ---
+      final boolean Prop_1_event_next(Iterator i) {
+          int nextstate = handleEvent(1, Prop_1_transition_next);
+          Prop_1_Category_violation = nextstate == 1;
+          return true;
+      }
+
+      // --- Atomic State Transition ---
+      private final int handleEvent(int eventId, int[] table) {
+          int nextstate;
+          while (true) {
+              int old = pairValue.get();
+              int oldstate = old & 3;               // extract state
+              nextstate = table[oldstate];           // TABLE LOOKUP
+              int newpair = ((eventId+1) << 2) | nextstate;
+              if (pairValue.compareAndSet(old, newpair))  // CAS
+                  break;
+          }
+          return nextstate;
+      }
+
+      // --- Violation Handler ---
+      final void Prop_1_handler_violation() {
+          RVMLogging.out.println("hasNext() not called before next()");
+      }
+  }
+
+  KEY INSIGHT: The entire monitoring logic is a single array lookup
+  (table[state]) wrapped in a CAS loop. Everything else is infrastructure
+  to get to this point.
+
+
+Step 4: Code Generation - RuntimeMonitor (Event Dispatch)
+----------------------------------------------------------
+  This is where we connect incoming events to the right monitor instance.
+
+  Standard mode:
+    MapOfMonitor<Iterator_HasNextMonitor> map;
+    CachedWeakReference wr_i = new CachedWeakReference(i);
+    monitor = map.getNodeEquivalent(wr_i);
+
+  Native IndexingTree mode:
+    IndexingTree tree = new IndexingTree();
+    monitor = (Iterator_HasNextMonitor) tree.getOrCreate1(factory, i);
+
+  Full event method (native mode):
+
+    public static final void nextEvent(JoinPoint.StaticPart joinpoint,
+                                       Iterator i) {
+        Iterator_HasNext_activated = true;
+        while (!lock.tryLock()) { Thread.yield(); }  // LOCK
+
+        // 1. CACHE CHECK (fast path)
+        Iterator_HasNextMonitor matchedEntry = null;
+        boolean cachehit = false;
+        if (i == cachekey_i) {
+            matchedEntry = (Iterator_HasNextMonitor) cachevalue;
+            cachehit = true;
+        } else {
+            // 2. TREE LOOKUP (slow path)
+            matchedEntry = (Iterator_HasNextMonitor)
+                tree.getOrCreate1(monitorFactory, i);
+        }
+
+        // 3. DISPATCH: call monitor's event method
+        final Iterator_HasNextMonitor finalMon = matchedEntry;
+        matchedEntry.Prop_1_event_next(joinpoint, i);
+
+        // 4. CHECK: did the FSM reach a violation state?
+        if (finalMon.Prop_1_Category_violation) {
+            finalMon.Prop_1_handler_violation(joinpoint);
+        }
+
+        // 5. CACHE UPDATE
+        if (!cachehit) {
+            cachekey_i = i;
+            cachevalue = matchedEntry;
+        }
+
+        lock.unlock();  // UNLOCK
+    }
+
+
+Step 5: Code Generation - Aspect (Interception)
+-------------------------------------------------
+  Generated by javamop (not rv-monitor):
+
+    public aspect Iterator_HasNextMonitorAspect {
+        pointcut HasNext_next(Iterator i) :
+            call(* Iterator.next()) && target(i)
+            && BaseAspect.notwithin()
+            && MOP_CommonPointCut();
+
+        before(Iterator i) : HasNext_next(i) {
+            MultiSpec_1RuntimeMonitor.Iterator_HasNext_nextEvent(
+                thisJoinPointStaticPart, i);
+        }
+    }
+
+
+Step 6: Runtime Execution Trace
+--------------------------------
+  Application code:
+    List<String> list = Arrays.asList("a", "b");
+    Iterator<String> it = list.iterator();  // no event (no pointcut)
+    it.next();                               // EVENT: next(it)
+      -> aspect fires before advice
+      -> nextEvent(joinpoint, it)
+      -> lock acquire
+      -> tree.getOrCreate1(factory, it)      // creates new monitor, state=0
+      -> monitor.Prop_1_event_next(it)       // state = transition_next[0] = 1
+      -> Prop_1_Category_violation = (1==1)  // TRUE! VIOLATION!
+      -> handler: "hasNext() not called before next()"
+      -> lock release
+
+
+================================================================================
+EXAMPLE 2: Collection_UnsafeIterator (general spec, 2 parameters)
+================================================================================
+
+Specification
+-------------
+  Collection_UnsafeIterator(Collection c, Iterator i) {
+      creation event create after(Collection c) returning(Iterator i) :
+          call(Iterator Collection+.iterator()) && target(c) {}
+      event modify after(Collection c) :
+          (call(* Collection+.add*(..)) || call(* Collection+.remove*(..)))
+          && target(c) {}
+      event useiter before(Iterator i) :
+          (call(* Iterator.next()) || call(* Iterator.hasNext()))
+          && target(i) {}
+
+      ere: create useiter* modify+ useiter
+
+      @match {
+          RVMLogging.out.println("Concurrent modification detected");
+      }
+  }
+
+
+Why This Is a General Spec
+---------------------------
+  Parameters: (Collection c, Iterator i)
+  Creation event: create(Collection c) returning(Iterator i)
+
+  The event definition says create(Collection c) -- only c is a direct
+  parameter. The "returning(Iterator i)" is captured by the AspectJ
+  pointcut but NOT included in event.getRVMParametersOnSpec().
+
+  So: rvmParametersOnSpec = [Collection c]
+      specParameters      = [Collection c, Iterator i]
+      isGeneral() = true  (creation event doesn't carry all spec params)
+
+  HOWEVER: javamop's Advice adds i from "returning" to the method call:
+      createEvent(joinpoint, c, i)   // i is available at call site!
+
+  This means the event method receives both c and i, but rv-monitor's
+  internal logic treats it as general because rvmParametersOnSpec = [c].
+
+
+Enable Set Computation
+-----------------------
+  The enable set determines what parameter combinations are needed
+  for each event to potentially reach a violation.
+
+  For the ERE: create useiter* modify+ useiter
+
+  Enable sets (simplified):
+    create:  {[]}           -- always enabled (creation)
+    modify:  {[c]}          -- need c alive
+    useiter: {[c, i]}       -- need both alive
+
+  This drives the indexing tree structure.
+
+
+Indexing Tree Structure (General Spec)
+--------------------------------------
+  Because isGeneral() = true, IndexingDeclNew creates:
+
+  Main trees (from indexingParameterSet):
+    tree_c_i   indexed by [c, i]  -- full binding (creation events)
+    tree_c     indexed by [c]     -- for modify events (only has c)
+    tree_i     indexed by [i]     -- for useiter events (only has i)
+
+  Copy trees (from indexingRestrictedParameterSet):
+    tree___To__c  for defineTo from [] -> [c]
+
+  Each tree stores Tuple2<MonitorSet, IMonitor>:
+    getValue1() = MonitorSet (all monitors matching this partial key)
+    getValue2() = IMonitor (specific monitor, or DisableHolder)
+
+
+Co-Enable Set and Termination
+------------------------------
+  The co-enable set determines when monitors can be terminated.
+
+  For Collection_UnsafeIterator:
+    alive_parameters_0 = [Collection c, Iterator i]
+
+  terminateInternal(int idnum):
+    switch(idnum) {
+        case 0:  // c died
+            alive_parameters_0 = false;
+            break;
+        case 1:  // i died
+            alive_parameters_0 = false;
+            break;
+    }
+    // If no co-enable condition satisfied, terminate
+    if (!(alive_parameters_0)) {
+        RVM_terminated = true;
+    }
+
+  This means: if EITHER c or i dies, the monitor is terminated.
+  The MonitorSet loop checks isTerminated() and skips dead monitors.
+  The GC later removes the IndexingTree entry.
+
+
+Event Dispatch (create event, native IndexingTree)
+---------------------------------------------------
+  public static final void createEvent(
+      JoinPoint.StaticPart joinpoint, Collection c, Iterator i) {
+
+      activated = true;
+      while (!lock.tryLock()) { Thread.yield(); }
+
+      // Look up Tuple2 in main tree with null wildcard for missing params
+      Tuple2<MonitorSet, IMonitor> matchedEntry =
+          (Tuple2) tree_c_i.getOrCreate2(monitorSetFactory, c, null);
+      //                                                    ^     ^
+      //                                                    c   i=null (wildcard)
+      // getOrCreate2 returns existing or creates new Tuple2 with empty Set
+
+      IMonitor matchedLeaf = matchedEntry.getValue2();
+      if (matchedLeaf == null) {
+          // D(X) main:4 -- Create new monitor
+          Monitor created = new Monitor(timestamp++, c);
+          matchedEntry.setValue2(created);
+          MonitorSet enclosingSet = matchedEntry.getValue1();
+          enclosingSet.add(created);
+
+          // Also insert into projection trees for partial-key lookups
+          // so modify(c) and useiter(i) can find this monitor later
+      }
+
+      // D(X) main:6 -- Set disable timestamp
+      ...
+
+      // D(X) main:8-9 -- Dispatch to all monitors in the set
+      MonitorSet set = matchedEntry.getValue1();
+      set.event_create(joinpoint, c, i);
+
+      lock.unlock();
+  }
+
+
+Event Dispatch (useiter event -- non-creation)
+----------------------------------------------
+  public static final void useiterEvent(
+      JoinPoint.StaticPart joinpoint, Iterator i) {
+
+      if (activated) {
+          while (!lock.tryLock()) { Thread.yield(); }
+
+          // Look up by i only, c=null wildcard
+          Tuple2<MonitorSet, IMonitor> matchedEntry =
+              (Tuple2) tree_c_i.getOrCreate2(monitorSetFactory, null, i);
+
+          IMonitor matchedLeaf = matchedEntry.getValue2();
+          if (matchedLeaf == null || matchedLeaf instanceof DisableHolder) {
+              // defineTo: look for source monitors to clone from
+              // (copy pairs computed from enable sets)
+              ...
+              // D(X) main:6 -- set disable holder
+              ...
+          }
+
+          // D(X) main:8-9 -- Dispatch to all monitors for this iterator
+          MonitorSet set = matchedEntry.getValue1();
+          set.event_useiter(joinpoint, i);
+
+          lock.unlock();
+      }
+  }
+
+
+MonitorSet Dispatch
+-------------------
+  final void event_useiter(JoinPoint.StaticPart joinpoint, Iterator i) {
+      for (int j = 0; j < this.size; j++) {
+          Monitor monitor = this.elements[j];
+          if (!monitor.isTerminated()) {       // co-enable check
+              monitor.Prop_1_event_useiter(joinpoint, i);
+              if (monitor.Prop_1_Category_match) {
+                  monitor.Prop_1_handler_match(joinpoint);
+              }
+          }
+      }
+  }
+
+
+Runtime Execution Trace
+-----------------------
+  List<String> list = new ArrayList<>(Arrays.asList("a", "b"));
+  Iterator<String> it = list.iterator();    // EVENT: create(list, it)
+    -> tree_c_i.getOrCreate2(factory, list, null)
+    -> creates Monitor(tau=1), state=0
+    -> set.event_create: state = transition_create[0] -> 1
+
+  it.hasNext();                              // EVENT: useiter(it)
+    -> tree_c_i.getOrCreate2(factory, null, it)
+    -> finds monitor in set for this iterator
+    -> set.event_useiter: state = transition_useiter[1] -> 1 (safe)
+
+  list.add("c");                             // EVENT: modify(list)
+    -> tree_c_i.getOrCreate2(factory, list, null)
+    -> finds monitor in set for this collection
+    -> set.event_modify: state = transition_modify[1] -> 2
+
+  it.next();                                 // EVENT: useiter(it)
+    -> set.event_useiter: state = transition_useiter[2] -> MATCH!
+    -> handler: "Concurrent modification detected"
+
+
+================================================================================
+Summary: What Happens at Each Level
+================================================================================
+
+  .mop spec
+    |
+    v
+  JavaMOP parser
+    |-- events (name, pointcut, parameters)
+    |-- formula (ERE/LTL)
+    |-- handlers (@violation, @match, @fail)
+    |
+    v
+  Logic Repository
+    |-- FSM states
+    |-- transition tables (int arrays)
+    |-- category conditions (state == N)
+    |
+    v
+  Monitor class (BaseMonitor.toString)
+    |-- AtomicInteger pairValue (packed state + lastEvent)
+    |-- handleEvent(): CAS loop doing table[state]
+    |-- one event method per event
+    |-- one handler method per category
+    |
+    v
+  RuntimeMonitor class (NativeEventMethodBody / EventMethodBody)
+    |-- IndexingTree per parameter combination
+    |-- cache (single-entry, identity-based)
+    |-- lock (ReentrantLock per spec)
+    |-- event methods: lock -> cache -> tree -> dispatch -> unlock
+    |
+    v
+  MonitorSet (MonitorSet.toString)
+    |-- array of monitors
+    |-- event_X(): iterate, skip terminated, call each monitor's event
+    |
+    v
+  Aspect (generated by javamop)
+    |-- pointcut: call(* Iterator.next()) && target(i)
+    |-- advice: before(Iterator i) { RuntimeMonitor.nextEvent(i); }
+    |
+    v
+  Agent jar
+    |-- aspects + monitors + runtime library + AspectJ weaver
+    |-- MANIFEST: Premain-Class = org.aspectj.weaver.loadtime.Agent
+    |
+    v
+  JVM runtime
+    |-- ClassFileTransformer weaves aspects into loaded classes
+    |-- Every matched method call triggers advice -> monitor chain
+    |-- FSM processes events, detects violations
+    |-- GC cleans up dead monitor entries (native mode)
+    |-- co-enable logic terminates monitors early (both modes)

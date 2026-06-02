@@ -130,6 +130,10 @@ public class RVMOptions {
 
     @Parameter(names = {"-traj"}, description = "Enable trajectory saving for Valg agents")
     public boolean traj = false;
+
+    @Parameter(names = {"-nativeindexingtree"},
+               description = "Use java.lang.rv.IndexingTree-based codegen (requires patched JDK).")
+    public boolean useNativeIndexingTree = false;
     
     @Parameter(names = "-spec", description = "Hyperparameters for spec(s)", converter = SpecConfigConverter.class, splitter = NoSplitter.class)
     public List<SpecConfig> specConfigs = new ArrayList<>();

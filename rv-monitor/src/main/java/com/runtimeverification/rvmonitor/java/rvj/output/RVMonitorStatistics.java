@@ -17,9 +17,15 @@ public class RVMonitorStatistics {
     private final HashMap<RVMParameter, RVMVariable> paramVars = new HashMap<RVMParameter, RVMVariable>();
 
     private final String specName;
+    /** Agent name (the {@code <Name>RuntimeMonitor} prefix), used to qualify
+     *  the global {@code <Name>_Statistics.numTotalMonitors} counter. Stock
+     *  previously stored only the per-spec name and dropped this — leaving
+     *  the global aggregator dead. */
+    private final String agentName;
 
     public RVMonitorStatistics(String name, RVMonitorSpec rvmSpec) {
         this.specName = rvmSpec.getName();
+        this.agentName = name;
         this.numMonitor = new RVMVariable(rvmSpec.getName() + "_Monitor_num");
         this.collectedMonitor = new RVMVariable(rvmSpec.getName()
                 + "_CollectedMonitor_num");
@@ -121,6 +127,44 @@ public class RVMonitorStatistics {
         return ret;
     }
 
+    /**
+     * Per-spec statistics dump for native-mode shutdown hooks. Emits the same
+     * printed lines as {@link #advice()} (so stock and native logs diff
+     * line-for-line) but without the AspectJ {@code after(): execution(*
+     * *.main(..))} wrapper, and with every counter reference qualified by
+     * {@code <Spec>Monitor.} since this runs from the {@code <Agent>_Statistics}
+     * shutdown thread rather than inside the monitor/aspect scope where the
+     * fields are otherwise in scope.
+     */
+    public String shutdownDump() {
+        String ret = "";
+        if (!Main.options.statistics)
+            return ret;
+
+        String q = specName + "Monitor.";
+        ret += "System.err.println(\"== " + this.specName + " ==\");\n";
+        ret += "System.err.println(\"#monitors: \" + " + q + numMonitor + ");\n";
+
+        for (String eventName : eventVars.keySet()) {
+            RVMVariable eventVar = eventVars.get(eventName);
+            ret += "System.err.println(\"#event - " + eventName + ": \" + "
+                    + q + eventVar + ");\n";
+        }
+
+        for (PropertyAndHandlers prop : categoryVars.keySet()) {
+            HashMap<String, RVMVariable> categoryVarsforProp = categoryVars
+                    .get(prop);
+            for (String categoryName : categoryVarsforProp.keySet()) {
+                RVMVariable categoryVar = categoryVarsforProp.get(categoryName);
+                ret += "System.err.println(\"#category - prop "
+                        + prop.getPropertyId() + " - " + categoryName
+                        + ": \" + " + q + categoryVar + ");\n";
+            }
+        }
+
+        return ret;
+    }
+
     public String paramInc(RVMParameter param) {
         String ret = "";
         if (!Main.options.statistics)
@@ -170,6 +214,10 @@ public class RVMonitorStatistics {
             return ret;
 
         ret += numMonitor + "++;\n";
+        // Also bump the global aggregator. Previously dead — the field was
+        // declared in <Name>_Statistics and read by the shutdown hook, but
+        // nothing wrote to it, so total-monitor counts always printed 0.
+        ret += agentName + "_Statistics.numTotalMonitors++;\n";
 
         return ret;
     }

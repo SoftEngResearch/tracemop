@@ -39,7 +39,7 @@ public class RVMOutputCode {
 
             enableSets.put(rvmSpec, enableSet);
 
-            SuffixMonitor monitor = new SuffixMonitor(rvmSpec.getName(), rvmSpec, optimizedCoenableSet, true);
+            SuffixMonitor monitor = new SuffixMonitor(name, rvmSpec.getName(), rvmSpec, optimizedCoenableSet, true);
 
             monitors.put(rvmSpec, monitor);
 

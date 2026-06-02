@@ -71,7 +71,9 @@ public class RVMProcessor {
         }
 
         // Generate output code
-        String result = (new RVMOutputCode(name, rvmSpecFile)).toString();
+        String result = Main.options.useNativeIndexingTree
+            ? new com.runtimeverification.rvmonitor.java.rvj.output.nativetree.NativeOutput(name, rvmSpecFile).generate()
+            : new RVMOutputCode(name, rvmSpecFile).toString();
 
         // Do indentation
         result = Tool.changeIndentation(result, "", "\t");

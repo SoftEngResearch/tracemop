@@ -1,0 +1,191 @@
+================================================================================
+TraceMOP Agent Building Process
+================================================================================
+
+Overview
+--------
+TraceMOP builds a Java agent (.jar) that intercepts method calls at runtime
+and checks them against formal specifications. The agent uses AspectJ
+load-time weaving to insert monitoring code into application bytecode.
+
+
+Build Command
+-------------
+  bash scripts/install.sh <TRACK> <STATS> [options]
+
+  Arguments:
+    TRACK   true/false  - use encoded event names for trace collection
+    STATS   true/false  - add event/monitor counters
+
+  Options:
+    -nativeindexingtree   use java.lang.rv.IndexingTree (requires patched JDK)
+    -valg                 enable RL agent adaptive monitoring
+    -traj                 save RL agent trajectories (requires -valg)
+    -spec <name> <config> per-spec RL hyperparameters
+
+  Examples:
+    bash scripts/install.sh false false
+    bash scripts/install.sh false false -nativeindexingtree
+    bash scripts/install.sh false true -valg
+
+
+Generated Agents (with -nativeindexingtree)
+-------------------------------------------
+  stock-no-track-no-stats-agent.jar    Old indexing, no counters (baseline)
+  stock-no-track-stats-agent.jar       Old indexing, with counters
+  native-no-track-no-stats-agent.jar   Native IndexingTree, no counters
+  native-no-track-stats-agent.jar      Native IndexingTree, with counters
+
+
+Directory Layout
+----------------
+  scripts/
+    props/            160 .mop specs, human-readable event names
+    props-track/      160 .mop specs, encoded event names (e116, e117...)
+    props-stock/      159 .mop specs, excludes 4-param NavigableMap_Modification
+    props-rvm/        159 pre-generated per-spec RuntimeMonitor.java (reference)
+    install.sh        Entry point - builds TraceMOP then builds agents
+    make-agent.sh     Builds one agent from a props directory
+
+
+Pipeline: install.sh
+--------------------
+
+  Step 1: Build TraceMOP
+  ~~~~~~~~~~~~~~~~~~~~~~
+    mvn clean install -DskipTests
+
+    Builds three modules:
+      - javamop/          .mop parser + AspectJ aspect generator
+      - rv-monitor/       .rvm processor + monitor code generator
+      - logicrepository/  logic formula -> FSM converter
+
+
+  Step 2: make-agent.sh <props-dir> ... <flags>
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    2a. JavaMOP: .mop -> .rvm + .aj
+    ................................
+
+    For each spec.mop in the props directory:
+
+      javamop -baseaspect BaseAspect.aj -emop spec.mop [-locationFromAjc]
+
+    Input:  Iterator_HasNext.mop
+    Output: Iterator_HasNext.rvm    (event + formula definitions for rv-monitor)
+            Iterator_HasNext.aj     (AspectJ aspect with pointcuts)
+
+    What javamop does:
+      - Parses the .mop spec (events, pointcuts, formula, handlers)
+      - Strips AspectJ pointcuts -> writes .rvm (pure event/formula)
+      - Generates .aj aspect with pointcut definitions and advice stubs
+      - IMPORTANT: adds "returning" parameters to event method calls
+        e.g., create(Collection c) returning(Iterator i)
+        -> the .aj advice calls createEvent(c, i) with both params
+
+
+    2b. RV-Monitor: .rvm -> RuntimeMonitor.java
+    ............................................
+
+      rv-monitor -merge -d classes/mop/ *.rvm [flags]
+
+    Input:  All .rvm files
+    Output: MultiSpec_1RuntimeMonitor.java (single merged file)
+
+    Flags:
+      -merge                  Combine all specs into one class
+      -locationFromAjc        Add joinpoint parameter to event methods
+      -s                      Add statistics counters
+      -nativeindexingtree     Use java.lang.rv.IndexingTree
+      -valg                   Add RL agent hooks
+
+    What rv-monitor does:
+      1. Parse each .rvm file
+      2. For each spec's property, call the logic repository:
+           - Send formula (ERE/LTL/FSM) via XML to logic plugin
+           - Receive FSM: states, transition tables, category conditions
+      3. Generate Java code:
+           - Monitor classes (FSM state machines)
+           - MonitorSet classes (iterate monitors for partial-binding events)
+           - RuntimeMonitor class (indexing trees, locks, caches, event methods)
+           - Factory classes (for native IndexingTree mode)
+           - Interface + DisableHolder classes (for general specs)
+      4. With -merge: combine all specs into one RuntimeMonitor class
+           - One lock per spec
+           - All indexing trees in one class
+           - Shared static initializer
+
+
+    2c. Compile: .java -> .class
+    ............................
+
+      javac classes/mop/*.java
+
+    For native IndexingTree mode, requires patched JDK with java.lang.rv.
+    For standard mode, requires rv-monitor-rt.jar on classpath.
+
+
+    2d. AspectJ Compile: .aj -> aspect .class + aop-ajc.xml
+    .......................................................
+
+      ajc -21 -d agent-jar-dir -outxml *.aj
+
+    Input:  All .aj aspect files + compiled monitor .class files on classpath
+    Output: Compiled aspect .class files + META-INF/aop-ajc.xml
+
+    This is just compilation (like javac), NOT weaving. The .aj aspects
+    become regular .class files containing pointcut definitions and advice
+    method bodies. The -outxml flag generates aop-ajc.xml which lists
+    the aspects for LATER load-time weaving.
+
+    No application bytecode is modified at this step. The weaving happens
+    at runtime when the agent intercepts class loading (see "Running the
+    Agent" below).
+
+
+    2e. Package: -> agent.jar
+    .........................
+
+    Assembles into a single jar:
+      - META-INF/MANIFEST.MF       (Premain-Class: org.aspectj.weaver.loadtime.Agent)
+      - META-INF/aop-ajc.xml       (weaving configuration)
+      - mop/*.class                 (compiled monitors + aspects)
+      - aspectjweaver.jar contents  (AspectJ LTW engine, extracted)
+      - rv-monitor-rt.jar contents  (runtime library, extracted)
+      - sqlite-jdbc.jar contents    (for trace DB, extracted)
+      - h2.jar contents             (for trace DB, extracted)
+
+
+Running the Agent
+-----------------
+  java -javaagent:native-no-track-no-stats-agent.jar -cp app.jar com.example.Main
+
+  At JVM startup:
+    1. AspectJ Agent.premain() registers a ClassFileTransformer
+    2. Every class loaded passes through the transformer
+    3. Transformer matches pointcuts from aop-ajc.xml
+    4. Matching methods get advice bytecode woven in
+    5. Application runs with monitoring active
+
+  At runtime (per monitored method call):
+    1. Woven bytecode calls RuntimeMonitor.eventMethod()
+    2. Lock acquire (tryLock with yield)
+    3. Cache check (identity == on key objects)
+    4. IndexingTree lookup (getOrCreate for creation, get for others)
+    5. Monitor state transition (FSM table lookup)
+    6. Category check (violation/match/fail condition)
+    7. Handler invocation if triggered (log, reset, etc.)
+    8. Cache update
+    9. Lock release
+
+
+Native IndexingTree vs Standard
+-------------------------------
+                        Standard                    Native IndexingTree
+  Indexing:             MapOfMonitor, MapOfSet...   java.lang.rv.IndexingTree
+  Key type:             CachedWeakReference         direct Object identity
+  Cleanup:              TerminatedMonitorCleaner    JVM GC (instanceIndexingTreeKlass)
+                        + WeakReference polling     + terminateInternal co-enable
+  Lock:                 ReentrantLock (same)        ReentrantLock (same)
+  Monitor FSM:          identical                   identical
+  Requires:             stock JDK                   patched JDK with java.lang.rv

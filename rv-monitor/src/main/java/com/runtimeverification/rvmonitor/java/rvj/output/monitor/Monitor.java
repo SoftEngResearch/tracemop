@@ -55,6 +55,19 @@ public abstract class Monitor {
     public Monitor(String outputName, RVMonitorSpec rvmSpec,
             OptimizedCoenableSet coenableSet, boolean isOutermost)
                     throws RVMException {
+        this(outputName, outputName, rvmSpec, coenableSet, isOutermost);
+    }
+
+    /** {@code agentName} is the {@code <Name>RuntimeMonitor} prefix (the same
+     *  value {@link com.runtimeverification.rvmonitor.java.rvj.output.combinedoutputcode.RVMonitorStatManager}
+     *  sees). In single-spec mode it coincides with {@code outputName}; under
+     *  {@code -merge} it's the merged class prefix (e.g. {@code MultiSpec_1}).
+     *  Needed so {@code stat.incNumMonitor()} can address the right global
+     *  counter class. The legacy ctor above defaults it to {@code outputName}
+     *  to preserve old behavior in single-spec mode. */
+    public Monitor(String agentName, String outputName, RVMonitorSpec rvmSpec,
+            OptimizedCoenableSet coenableSet, boolean isOutermost)
+                    throws RVMException {
         this.outputName = outputName;
         this.isOutermost = isOutermost;
 
@@ -72,7 +85,7 @@ public abstract class Monitor {
             }
         }
 
-        this.stat = new RVMonitorStatistics(outputName, rvmSpec);
+        this.stat = new RVMonitorStatistics(agentName, rvmSpec);
 
         this.defaultMessage += outputName + " has been violated on line \" + "
                 + "__LOC"

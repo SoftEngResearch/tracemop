@@ -31,7 +31,15 @@ public class RawMonitor extends Monitor {
     public RawMonitor(String outputName, RVMonitorSpec rvmSpec,
             OptimizedCoenableSet coenableSet, boolean isOutermost)
                     throws RVMException {
-        super(outputName, rvmSpec, coenableSet, isOutermost);
+        this(outputName, outputName, rvmSpec, coenableSet, isOutermost);
+    }
+
+    /** Agent-name variant — propagates {@code agentName} so
+     *  {@code <Name>_Statistics.numTotalMonitors} addresses the right class. */
+    public RawMonitor(String agentName, String outputName, RVMonitorSpec rvmSpec,
+            OptimizedCoenableSet coenableSet, boolean isOutermost)
+                    throws RVMException {
+        super(agentName, outputName, rvmSpec, coenableSet, isOutermost);
 
         isDefined = true;
 

@@ -130,12 +130,26 @@ public class BaseMonitor extends Monitor {
 
     public BaseMonitor(String name, RVMonitorSpec rvmSpec, OptimizedCoenableSet coenableSet, boolean isOutermost)
                     throws RVMException {
-        this(name, rvmSpec, coenableSet, isOutermost, "");
+        this(name, name, rvmSpec, coenableSet, isOutermost, "");
     }
 
+    /** Legacy 5-arg ctor (used by {@link EnforceMonitor}): defaults
+     *  {@code agentName} to {@code name}. */
     public BaseMonitor(String name, RVMonitorSpec rvmSpec, OptimizedCoenableSet coenableSet, boolean isOutermost,
             String monitorNameSuffix) throws RVMException {
-        super(name, rvmSpec, coenableSet, isOutermost);
+        this(name, name, rvmSpec, coenableSet, isOutermost, monitorNameSuffix);
+    }
+
+    /** Agent-name variant — see {@link Monitor#Monitor(String, String,
+     *  RVMonitorSpec, OptimizedCoenableSet, boolean)}. */
+    public BaseMonitor(String agentName, String name, RVMonitorSpec rvmSpec, OptimizedCoenableSet coenableSet,
+            boolean isOutermost) throws RVMException {
+        this(agentName, name, rvmSpec, coenableSet, isOutermost, "");
+    }
+
+    public BaseMonitor(String agentName, String name, RVMonitorSpec rvmSpec, OptimizedCoenableSet coenableSet,
+            boolean isOutermost, String monitorNameSuffix) throws RVMException {
+        super(agentName, name, rvmSpec, coenableSet, isOutermost);
         this.initialize(name, rvmSpec, coenableSet, isOutermost,
                 monitorNameSuffix);
     }

@@ -32,6 +32,19 @@ public class RVMonitorStatManager {
     }
 
     public String statClass() {
+        return statClass(false);
+    }
+
+    /**
+     * @param includePerSpec when true, the shutdown-hook {@code run()} also
+     *        prints each spec's per-monitor/per-event/per-category counters via
+     *        {@link RVMonitorStatistics#shutdownDump()}. Used by native-mode
+     *        codegen, which (unlike stock) does not weave the per-spec
+     *        {@code after(): execution(* *.main(..))} statistics advice, so the
+     *        breakdown has to come from the shutdown hook instead. Stock passes
+     *        false to avoid double-printing alongside that woven advice.
+     */
+    public String statClass(boolean includePerSpec) {
         String ret = "";
 
         if (!Main.options.statistics)
@@ -50,6 +63,11 @@ public class RVMonitorStatManager {
                     + ".numTotalEvents);\n";
             ret += "System.err.println(\"# of total monitors: \" + "
                     + statClass + ".numTotalMonitors);\n";
+            if (includePerSpec) {
+                for (RVMonitorStatistics stat : stats.values()) {
+                    ret += stat.shutdownDump();
+                }
+            }
         }
         ret += "}\n";
 
