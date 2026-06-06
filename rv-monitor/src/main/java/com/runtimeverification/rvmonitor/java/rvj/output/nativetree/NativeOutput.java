@@ -201,10 +201,14 @@ public final class NativeOutput {
         String specName = spec.getName();
         String monName = specName + "Monitor";
 
-        // Lock
-        sb.append("\t// Declarations for the Lock\n");
-        sb.append("\tstatic final ReentrantLock ").append(specName)
-          .append("_RVMLock = new ReentrantLock();\n\n");
+        // Lock — only when native dispatch self-locks. By default the woven
+        // aspect's MOPLock serializes per-spec dispatch (see NativeDispatch),
+        // so no RVMLock is emitted, matching stock's aspect-based backend.
+        if (NativeDispatch.EMIT_DISPATCH_LOCK) {
+            sb.append("\t// Declarations for the Lock\n");
+            sb.append("\tstatic final ReentrantLock ").append(specName)
+              .append("_RVMLock = new ReentrantLock();\n\n");
+        }
 
         // Monotonic timestamp counter — feeds tau/disable on every monitor
         // creation/visit. Drives the definability checks in defineTo.

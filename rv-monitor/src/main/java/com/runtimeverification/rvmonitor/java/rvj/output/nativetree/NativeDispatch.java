@@ -50,6 +50,38 @@ final class NativeDispatch {
      *  when {@code -statistics} is off. Provided by {@link NativeOutput}. */
     private final com.runtimeverification.rvmonitor.java.rvj.output.RVMonitorStatistics stat;
 
+    /**
+     * Whether native dispatch emits its own per-spec lock (RVMLock).
+     *
+     * The woven JavaMOP aspect already wraps every event in a blocking
+     * per-spec {@code <spec>_MOPLock.lock()} (combinedaspect/LockManager),
+     * which serializes all access to this spec's IndexingTree — the only Java
+     * code that touches the tree runs inside these dispatch methods. So an
+     * RVMLock here is a redundant second coarse lock over the identical scope.
+     * Stock's aspect-based backend emits no such lock and relies solely on the
+     * aspect; native now does the same. GC-vs-mutator safety on the tree is
+     * handled inside the VM (no-safepoint rehash, snapshot reads), not by any
+     * Java lock, so dropping RVMLock loses no protection.
+     *
+     * Flip to {@code true} to restore self-locking dispatch (aspect-less
+     * deployment, or lock-overhead ablation).
+     */
+    static final boolean EMIT_DISPATCH_LOCK = false;
+
+    /** Lock acquire line for a dispatch body, or empty when {@link #EMIT_DISPATCH_LOCK} is off. */
+    private String acquireLock(String pad) {
+        return EMIT_DISPATCH_LOCK
+            ? pad + "while (!" + lockName + ".tryLock()) Thread.yield();\n"
+            : "";
+    }
+
+    /** Lock release line for a dispatch body, or empty when {@link #EMIT_DISPATCH_LOCK} is off. */
+    private String releaseLock(String pad) {
+        return EMIT_DISPATCH_LOCK
+            ? "\n" + pad + lockName + ".unlock();\n"
+            : "";
+    }
+
     NativeDispatch(String agentName, RVMonitorSpec spec,
                    com.runtimeverification.rvmonitor.java.rvj.output.RVMonitorStatistics stat) {
         this.spec = spec;
@@ -133,14 +165,14 @@ final class NativeDispatch {
         // events set `activated` above; non-creation events returned early if
         // dormant), so this never runs on the dormant fast path.
         sb.append(incEventPerSpec("\t\t", event));
-        sb.append("\t\twhile (!").append(lockName).append(".tryLock()) Thread.yield();\n");
+        sb.append(acquireLock("\t\t"));
         String pad = "\t\t";
         sb.append(pad).append("// D(X) main:8--9 — broadcast through universal set\n");
         sb.append(pad).append(setName).append(" stateTransitionedSet = ").append(specName)
           .append("__Map.getValue1();\n");
         sb.append(pad).append("stateTransitionedSet.event_").append(event.getId()).append("(")
           .append(eventCallArgs(event)).append(");\n");
-        sb.append("\n\t\t").append(lockName).append(".unlock();\n");
+        sb.append(releaseLock("\t\t"));
         sb.append("\t}\n\n");
         return sb.toString();
     }
@@ -164,12 +196,12 @@ final class NativeDispatch {
         // events set `activated` above; non-creation events returned early if
         // dormant), so this never runs on the dormant fast path.
         sb.append(incEventPerSpec("\t\t", event));
-        sb.append("\t\twhile (!").append(lockName).append(".tryLock()) Thread.yield();\n");
+        sb.append(acquireLock("\t\t"));
         sb.append("\t\t").append(monitorName).append(" matchedEntry = ")
           .append(specName).append("__Map;\n");
         sb.append("\t\t// D(X) main:8--9\n");
         sb.append(emitDispatchCall(event, "matchedEntry"));
-        sb.append("\n\t\t").append(lockName).append(".unlock();\n");
+        sb.append(releaseLock("\t\t"));
         sb.append("\t}\n\n");
         return sb.toString();
     }
@@ -206,7 +238,7 @@ final class NativeDispatch {
         // events set `activated` above; non-creation events returned early if
         // dormant), so this never runs on the dormant fast path.
         sb.append(incEventPerSpec("\t\t", event));
-        sb.append("\t\twhile (!").append(lockName).append(".tryLock()) Thread.yield();\n");
+        sb.append(acquireLock("\t\t"));
         String pad = "\t\t";
 
         sb.append(pad).append(monitorName).append(" matchedEntry = null;\n");
@@ -248,7 +280,7 @@ final class NativeDispatch {
             sb.append(pad).append("}\n");
         }
 
-        sb.append("\n\t\t").append(lockName).append(".unlock();\n");
+        sb.append(releaseLock("\t\t"));
         sb.append("\t}\n\n");
         return sb.toString();
     }
@@ -333,7 +365,7 @@ final class NativeDispatch {
         // events set `activated` above; non-creation events returned early if
         // dormant), so this never runs on the dormant fast path.
         sb.append(incEventPerSpec("\t\t", event));
-        sb.append("\t\twhile (!").append(lockName).append(".tryLock()) Thread.yield();\n");
+        sb.append(acquireLock("\t\t"));
         String pad = "\t\t";
 
         if (isCreation && isFullKey) {
@@ -430,7 +462,7 @@ final class NativeDispatch {
             sb.append(pad).append("}\n");
         }
 
-        sb.append("\n\t\t").append(lockName).append(".unlock();\n");
+        sb.append(releaseLock("\t\t"));
         sb.append("\t}\n\n");
         return sb.toString();
     }
@@ -544,7 +576,7 @@ final class NativeDispatch {
         // events set `activated` above; non-creation events returned early if
         // dormant), so this never runs on the dormant fast path.
         sb.append(incEventPerSpec("\t\t", event));
-        sb.append("\t\twhile (!").append(lockName).append(".tryLock()) Thread.yield();\n");
+        sb.append(acquireLock("\t\t"));
         String pad = "\t\t";
         String projKey = eventParams.parameterStringUnderscore();
         String cachePrefix = specName + "_" + projKey + "_Map";
@@ -745,7 +777,7 @@ final class NativeDispatch {
             sb.append(pad).append("}\n");
         }
 
-        sb.append("\n\t\t").append(lockName).append(".unlock();\n");
+        sb.append(releaseLock("\t\t"));
         sb.append("\t}\n\n");
         return sb.toString();
     }
