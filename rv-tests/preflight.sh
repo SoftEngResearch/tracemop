@@ -15,11 +15,12 @@ warn() { printf "  \033[33mWARN\033[0m %s\n     -> %s\n" "$1" "$2"; WARN=$((WARN
 
 echo "=== rv-tests preflight ($(uname -sm)) ==="
 echo "repo root: $RV_REPO_ROOT"
+echo "jdk tree:  ${RV_JDK_TREE:-<not found>}"
 echo ""
 
 # 1. RV/native patched JDK (the one experiments run on)
 echo "[1] patched JDK (native IndexingTree backend)"
-if [ -x "$PATCHED_JDK/bin/java" ]; then
+if [ -n "${PATCHED_JDK:-}" ] && [ -x "$PATCHED_JDK/bin/java" ]; then
   ver=$("$PATCHED_JDK/bin/java" -version 2>&1 | head -1)
   ok "$PATCHED_JDK  ($ver)"
   # sanity: java.lang.rv package present (proves it's the patched build, not stock)
@@ -28,9 +29,12 @@ if [ -x "$PATCHED_JDK/bin/java" ]; then
   else
     warn "could not --add-opens java.base/java.lang.rv" "is this really the RV-patched JDK?"
   fi
+elif [ -n "${RV_JDK_TREE:-}" ]; then
+  bad "JDK tree found but not built: $RV_JDK_TREE/build/*/images/jdk missing" \
+      "build it:  cd $RV_JDK_TREE && make CONF=linux-x86_64-server-release images"
 else
-  bad "no patched JDK under $RV_REPO_ROOT/jdk21-rv-young-gc-fix/build/*/images/jdk" \
-      "build it:  cd jdk21-rv-young-gc-fix && bash configure && make images"
+  bad "no configured JDK tree found near $(dirname "$DIR")" \
+      "point at it:  RV_JDK_TREE=/path/to/jdk-repo bash preflight.sh   (and configure+build it)"
 fi
 echo ""
 

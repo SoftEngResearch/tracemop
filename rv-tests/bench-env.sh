@@ -7,8 +7,8 @@
 # for `timeout` and peak-RSS measurement.
 #
 # Everything respects pre-set env vars, so any value can still be overridden:
-#   PATCHED_JDK= RV_JDK= STOCK_JDK= DACAPO= RV_REPO_ROOT= RV_CONF=
-#   (RV_CONF pins which build/<conf>/images/jdk to use when several exist)
+#   PATCHED_JDK= RV_JDK= STOCK_JDK= DACAPO= RV_JDK_TREE= RV_CONF= RV_REPO_ROOT=
+#   (RV_JDK_TREE pins the JDK repo dir; RV_CONF pins build/<conf> when several exist)
 #
 # Exports / sets:
 #   RV_REPO_ROOT   repo root (dir containing this file, unless preset)
@@ -23,19 +23,30 @@
 #   rv_parse_rss FILE     -> peak RSS in MB (parses BSD or GNU time output)
 #   rv_run_timeout SECS CMD...   run CMD with a hard timeout if available
 
-# --- umbrella root: walk up from this file until we find the dir that contains
-# the JDK build trees (jdk21-rv-young-gc-fix/). Location-independent so a copy
-# of this file can live inside either git repo (tracemop/, jdk21-rv-young-gc-fix/)
-# and still locate the sibling JDK trees. Override with RV_REPO_ROOT=.
+# --- locate the RV/native JDK tree (NAME-INDEPENDENT) -------------------------
+# The JDK repo is called jdk21-rv-young-gc-fix on one box and jdk21-4-rv on
+# another, and may not share a parent with this repo. So we don't match by name:
+# we search UP from this file for a *configured* JDK, identified by its
+# build/<conf>/spec.gmk (created by `configure`, present even before `make`).
+# The stock tree is skipped here. Override with RV_JDK_TREE=, or point
+# PATCHED_JDK / RV_JDK straight at an images/jdk.
 _benv_self="${BASH_SOURCE[0]:-$0}"
-if [ -z "${RV_REPO_ROOT:-}" ]; then
-  _benv_p=$(cd "$(dirname "$_benv_self")" && pwd)
-  while [ "$_benv_p" != / ]; do
-    [ -d "$_benv_p/jdk21-rv-young-gc-fix" ] && { RV_REPO_ROOT=$_benv_p; break; }
-    _benv_p=$(dirname "$_benv_p")
+_benv_here=$(cd "$(dirname "$_benv_self")" && pwd)
+
+_benv_find_jdk_tree() {  # echo the dir that contains build/<conf>/ (the JDK repo)
+  local p=$_benv_here m
+  while [ "$p" != / ]; do
+    for m in "$p"/build/*/spec.gmk "$p"/*/build/*/spec.gmk; do
+      case "$m" in *stock*) continue ;; esac
+      [ -f "$m" ] && { (cd "$(dirname "$m")/../.." && pwd); return 0; }
+    done
+    p=$(dirname "$p")
   done
-  RV_REPO_ROOT=${RV_REPO_ROOT:-$(cd "$(dirname "$_benv_self")" && pwd)}
-fi
+  return 1
+}
+RV_JDK_TREE=${RV_JDK_TREE:-$(_benv_find_jdk_tree)}
+# umbrella root = parent of the JDK tree (used only for fallback jar search)
+RV_REPO_ROOT=${RV_REPO_ROOT:-$([ -n "${RV_JDK_TREE:-}" ] && dirname "$RV_JDK_TREE" || echo "$_benv_here")}
 
 # --- OS flavor ----------------------------------------------------------------
 case "$(uname -s)" in
@@ -43,12 +54,13 @@ case "$(uname -s)" in
   *)      RV_OS=linux ;;
 esac
 
-# --- JDK detection: glob build/*/images/jdk so arch/platform never hardcoded --
+# --- pick the right config within a JDK tree ----------------------------------
 # When several configs exist (e.g. linux-x86_64-server-release, mtcleanup,
 # weakobj), pick deterministically: an explicit RV_CONF wins, else a *release*
 # config, else any config — but never the 'weakobj' ablation (it crashes).
 _benv_pick_jdk() {  # $1 = tree dir; echo the chosen images/jdk
   local d
+  [ -n "$1" ] || return 1
   if [ -n "${RV_CONF:-}" ] && [ -x "$1/build/$RV_CONF/images/jdk/bin/java" ]; then
     echo "$1/build/$RV_CONF/images/jdk"; return 0
   fi
@@ -61,12 +73,19 @@ _benv_pick_jdk() {  # $1 = tree dir; echo the chosen images/jdk
   done
   return 1
 }
-PATCHED_JDK=${PATCHED_JDK:-$(_benv_pick_jdk "$RV_REPO_ROOT/jdk21-rv-young-gc-fix")}
+PATCHED_JDK=${PATCHED_JDK:-$(_benv_pick_jdk "${RV_JDK_TREE:-}")}
 RV_JDK=${RV_JDK:-$PATCHED_JDK}
-STOCK_JDK=${STOCK_JDK:-$(_benv_pick_jdk "$RV_REPO_ROOT/jdk21u-stock")}
-# Last-resort stock fallback for Linux CI boxes with a system JDK only.
+
+# --- stock JDK (only needed by the Family B woven lane) -----------------------
+# Explicit, else a sibling tree whose name hints 'stock', else a system JDK.
+if [ -z "${STOCK_JDK:-}" ]; then
+  for d in "$RV_REPO_ROOT"/*stock*; do
+    [ -d "$d" ] || continue
+    _s=$(_benv_pick_jdk "$d"); [ -n "$_s" ] && { STOCK_JDK=$_s; break; }
+  done
+fi
 if [ -z "${STOCK_JDK:-}" ] || [ ! -x "${STOCK_JDK}/bin/java" ]; then
-  for d in /usr/lib/jvm/java-21-openjdk /usr/lib/jvm/java-21-openjdk-amd64; do
+  for d in /usr/lib/jvm/java-21-openjdk /usr/lib/jvm/java-21-openjdk-amd64 /usr/lib/jvm/java-21; do
     [ -x "$d/bin/java" ] && { STOCK_JDK=$d; break; }
   done
 fi
@@ -80,7 +99,8 @@ _benv_first_existing() { local c; for c in "$@"; do [ -n "$c" ] && [ -f "$c" ] &
 [ -n "${DACAPO:-}" ] && RV_DACAPO_USER_SET=1 || RV_DACAPO_USER_SET=0
 DACAPO_912=${DACAPO_912:-$(_benv_first_existing \
   "$HOME/Downloads/dacapo-9.12-bach.jar" \
-  "$RV_REPO_ROOT/jdk21-rv-young-gc-fix/bench/lib/dacapo.jar")}
+  "$HOME/dacapo-9.12-bach.jar" \
+  "${RV_JDK_TREE:-/nonexistent}/bench/lib/dacapo.jar")}
 DACAPO_CHOPIN=${DACAPO_CHOPIN:-$(_benv_first_existing \
   "$HOME/Downloads/dacapo-23.11/dacapo-23.11-chopin.jar")}
 # Generic default: 9.12 (matches the classic spec set) unless told otherwise.
@@ -126,8 +146,8 @@ rv_parse_rss() {  # $1 = file with time output -> peak RSS in MB (0 if absent)
 
 # --- one-line banner so runs self-document which JDKs/jar were picked ----------
 rv_env_banner() {
-  echo "[bench-env] os=$RV_OS"
-  echo "[bench-env] PATCHED_JDK=$PATCHED_JDK"
+  echo "[bench-env] os=$RV_OS  jdk_tree=${RV_JDK_TREE:-<none>}"
+  echo "[bench-env] PATCHED_JDK=${PATCHED_JDK:-<not built>}"
   echo "[bench-env] STOCK_JDK=$STOCK_JDK"
   echo "[bench-env] DACAPO=$DACAPO"
   echo "[bench-env] timeout=${RV_TIMEOUT:-<none>}"
