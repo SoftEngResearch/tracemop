@@ -7,7 +7,8 @@
 # for `timeout` and peak-RSS measurement.
 #
 # Everything respects pre-set env vars, so any value can still be overridden:
-#   PATCHED_JDK= RV_JDK= STOCK_JDK= DACAPO= RV_REPO_ROOT=
+#   PATCHED_JDK= RV_JDK= STOCK_JDK= DACAPO= RV_REPO_ROOT= RV_CONF=
+#   (RV_CONF pins which build/<conf>/images/jdk to use when several exist)
 #
 # Exports / sets:
 #   RV_REPO_ROOT   repo root (dir containing this file, unless preset)
@@ -43,9 +44,19 @@ case "$(uname -s)" in
 esac
 
 # --- JDK detection: glob build/*/images/jdk so arch/platform never hardcoded --
-_benv_pick_jdk() {  # $1 = tree dir; echo first images/jdk with a usable java
+# When several configs exist (e.g. linux-x86_64-server-release, mtcleanup,
+# weakobj), pick deterministically: an explicit RV_CONF wins, else a *release*
+# config, else any config — but never the 'weakobj' ablation (it crashes).
+_benv_pick_jdk() {  # $1 = tree dir; echo the chosen images/jdk
   local d
+  if [ -n "${RV_CONF:-}" ] && [ -x "$1/build/$RV_CONF/images/jdk/bin/java" ]; then
+    echo "$1/build/$RV_CONF/images/jdk"; return 0
+  fi
+  for d in "$1"/build/*release*/images/jdk; do
+    [ -x "$d/bin/java" ] && { echo "$d"; return 0; }
+  done
   for d in "$1"/build/*/images/jdk; do
+    case "$d" in *weakobj*) continue ;; esac
     [ -x "$d/bin/java" ] && { echo "$d"; return 0; }
   done
   return 1
