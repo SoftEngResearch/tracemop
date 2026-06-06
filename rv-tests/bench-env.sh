@@ -30,6 +30,13 @@
 # build/<conf>/spec.gmk (created by `configure`, present even before `make`).
 # The stock tree is skipped here. Override with RV_JDK_TREE=, or point
 # PATCHED_JDK / RV_JDK straight at an images/jdk.
+# Sourced under callers that may use `set -e` (e.g. build-agents.sh). Our
+# detection probes for files that are often absent (DaCapo, async-profiler, an
+# unbuilt JDK); a failing command substitution would otherwise abort the caller.
+# Suspend errexit while sourcing and restore the caller's setting at the end.
+case $- in *e*) _benv_restore_e=1 ;; *) _benv_restore_e=0 ;; esac
+set +e
+
 _benv_self="${BASH_SOURCE[0]:-$0}"
 _benv_here=$(cd "$(dirname "$_benv_self")" && pwd)
 
@@ -152,3 +159,7 @@ rv_env_banner() {
   echo "[bench-env] DACAPO=$DACAPO"
   echo "[bench-env] timeout=${RV_TIMEOUT:-<none>}"
 }
+
+# restore caller's errexit (suspended at top of file)
+[ "${_benv_restore_e:-0}" = 1 ] && set -e
+unset _benv_restore_e
