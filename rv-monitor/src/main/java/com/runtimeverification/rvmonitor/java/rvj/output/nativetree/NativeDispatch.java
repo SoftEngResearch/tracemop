@@ -97,6 +97,21 @@ final class NativeDispatch {
         this.stat = stat;
     }
 
+    /** Emit the per-spec {@code activated} set, GUARDED by a read.
+     *
+     *  <p>{@code activated} is {@code volatile} so non-creation events can take
+     *  the lock-free dormant fast path (`if (!activated) return;`). Writing it
+     *  unconditionally on every creation event makes the volatile store fence on
+     *  every event — on x86_64 that is a `lock add` StoreLoad barrier (~20-40
+     *  cycles), which dominated the Fuzzino dispatch self-time and caused the
+     *  x86_64-only slowdown (aarch64's `stlr` is near-free, so it didn't show
+     *  there). The flag is monotonic (false → true once, never reset), so guard
+     *  the store: the volatile fence then fires once per spec, not once per
+     *  event, while the lock-free read keeps its visibility. */
+    private String setActivatedGuarded() {
+        return "\t\tif (!" + activatedName + ") " + activatedName + " = true;\n";
+    }
+
     /** Global event counter — bumped on every advice firing, emitted BEFORE the
      *  per-spec {@code activated} fast-path. Mirrors stock's Advice.java, where
      *  {@code numTotalEvents++} precedes the activator guard, so it counts the
@@ -156,7 +171,7 @@ final class NativeDispatch {
         // Statistics: count every advice firing (matches stock semantics).
         sb.append(incEventGlobal("\t\t", event));
         if (isCreation) {
-            sb.append("\t\t").append(activatedName).append(" = true;\n");
+            sb.append(setActivatedGuarded());
         } else {
             // Fast path: skip lock for dormant specs (see emitOneParamSuffixDispatch).
             sb.append("\t\tif (!").append(activatedName).append(") return;\n");
@@ -191,7 +206,7 @@ final class NativeDispatch {
           .append("Event(").append(staticDispatchSignature(event)).append(") {\n");
         // Statistics: count every advice firing (matches stock semantics).
         sb.append(incEventGlobal("\t\t", event));
-        sb.append("\t\t").append(activatedName).append(" = true;\n");
+        sb.append(setActivatedGuarded());
         // Per-spec event counter: spec is guaranteed active here (creation
         // events set `activated` above; non-creation events returned early if
         // dormant), so this never runs on the dormant fast path.
@@ -224,7 +239,7 @@ final class NativeDispatch {
         // Statistics: count every advice firing (matches stock semantics).
         sb.append(incEventGlobal("\t\t", event));
         if (isCreation) {
-            sb.append("\t\t").append(activatedName).append(" = true;\n");
+            sb.append(setActivatedGuarded());
         } else {
             // Fast path: skip the lock entirely if the spec has never been
             // activated. `activated` is monotonic (false → true exactly once,
@@ -356,7 +371,7 @@ final class NativeDispatch {
         sb.append(incEventGlobal("\t\t", event));
 
         if (isCreation) {
-            sb.append("\t\t").append(activatedName).append(" = true;\n");
+            sb.append(setActivatedGuarded());
         } else {
             // Fast path: skip lock for dormant specs (see emitOneParamSuffixDispatch).
             sb.append("\t\tif (!").append(activatedName).append(") return;\n");
@@ -567,7 +582,7 @@ final class NativeDispatch {
         // `emitZeroParamBroadcast` in `emitAllEvents` before reaching here.
 
         if (isCreation) {
-            sb.append("\t\t").append(activatedName).append(" = true;\n");
+            sb.append(setActivatedGuarded());
         } else {
             // Fast path: skip lock for dormant specs (see emitOneParamSuffixDispatch).
             sb.append("\t\tif (!").append(activatedName).append(") return;\n");
