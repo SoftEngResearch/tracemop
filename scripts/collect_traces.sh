@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Collect traces
-# Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false] [path-to-javamop-extension]
+# Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false] [path-to-javamop-extension] [stats: false]
 #
 SCRIPT_DIR=$( cd $( dirname $0 ) && pwd )
 
@@ -11,13 +11,14 @@ OUTPUT_DIR=$3
 TIMED=${4:-false}
 PER_TEST=${5:-false}
 PATH_TO_EXTENSION=${6}
+STATS=${7:-false}
 PROJECT_NAME=$(echo ${REPO} | tr / -)
 
 ALREADY_CHECKED=false
 TMP_DIR=/tmp/tracemop-${PROJECT_NAME}
 
 if [[ -z ${OUTPUT_DIR} ]]; then
-  echo "Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false] [path-to-javamop-extension]"
+  echo "Usage: bash collect_traces.sh <repo> <sha> <output-dir> [timed: false] [per-test: false] [path-to-javamop-extension] [stats: false]"
   exit 1
 else
   if [[ ! ${OUTPUT_DIR} =~ ^/.* ]]; then
@@ -67,7 +68,12 @@ function clone() {
 }
 
 function install() {
-  (time mvn -Dmaven.repo.local=${OUTPUT_DIR}/repo install:install-file -Dfile=${SCRIPT_DIR}/track-no-stats-agent.jar -DgroupId="javamop-agent" -DartifactId="javamop-agent" -Dversion="1.0" -Dpackaging="jar") &>> ${OUTPUT_DIR}/logs/install.log
+  local agent="track-no-stats-agent.jar"
+  if [[ ${STATS} == "true" ]]; then
+    agent="track-stats-agent.jar"
+  fi
+
+  (time mvn -Dmaven.repo.local=${OUTPUT_DIR}/repo install:install-file -Dfile=${SCRIPT_DIR}/${agent} -DgroupId="javamop-agent" -DartifactId="javamop-agent" -Dversion="1.0" -Dpackaging="jar") &>> ${OUTPUT_DIR}/logs/install.log
   if [[ $? -ne 0 ]]; then
     echo "[TRACEMOP] ERROR: Unable to install agent"
     exit 1

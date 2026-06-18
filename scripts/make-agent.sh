@@ -1,13 +1,13 @@
 #!/bin/bash
 #
 # Create Java agent for TraceMOP
-# Usage: make-agent.sh <property-directory> <output-directory> <verbose-mode> <tracking-mode> <trace-dir> <agent-name> <db-conf> <stats> <series> <violation-from-ajc> <valg> <traj> [spec...]
+# Usage: make-agent.sh <property-directory> <output-directory> <verbose-mode> <tracking-mode> <trace-dir> <agent-name> <db-conf> <stats> <series> <violation-from-ajc> <valg> [valg-default] <traj> [-nativeindexingtree] [spec...]
 # Source: https://github.com/SoftEngResearch/tracemop/blob/master/scripts/make-agent.sh
 #
 SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 
 if [[ $# -lt 12 ]]; then
-    echo "Usage: $0 property-directory output-directory verbose-mode tracking-mode trace-dir agent-name db-conf stats series valg traj [spec...]"
+    echo "Usage: $0 property-directory output-directory verbose-mode tracking-mode trace-dir agent-name db-conf stats series violation-from-ajc valg [valg-default] traj [-nativeindexingtree] [spec...]"
     exit
 fi
 
@@ -32,20 +32,28 @@ fi
 traj="$1"
 shift
 
+native_indexing_tree=false
 spec_args=()
 while [[ $# -gt 0 ]]; do
-    if [[ "$1" == "-spec" ]]; then
-        if [[ $# -lt 3 ]]; then
-            echo "[make-agent.sh] Missing arguments for -spec"
-            exit 1
-        fi
-        spec_name="$2"
-        spec_value="$3"
-        spec_args+=("-spec" "$spec_name" "$spec_value")
-        shift 3
-    else
-        break
-    fi
+    case "$1" in
+        -nativeindexingtree|--native-indexing-tree)
+            native_indexing_tree=true
+            shift 1
+            ;;
+        -spec)
+            if [[ $# -lt 3 ]]; then
+                echo "[make-agent.sh] Missing arguments for -spec"
+                exit 1
+            fi
+            spec_name="$2"
+            spec_value="$3"
+            spec_args+=("-spec" "$spec_name" "$spec_value")
+            shift 3
+            ;;
+        *)
+            break
+            ;;
+    esac
 done
 
 function build_agent() {
@@ -88,6 +96,9 @@ function build_agent() {
     
     if [[ "$traj" == "true" ]]; then
         rv_monitor_flag+=("-traj")
+    fi
+    if [[ "$native_indexing_tree" == "true" ]]; then
+        rv_monitor_flag+=("-nativeindexingtree")
     fi
     rv_monitor_flag+=("${spec_args[@]}")
     cp ${SCRIPT_DIR}/BaseAspect_new.aj ${props_dir}/BaseAspect.aj

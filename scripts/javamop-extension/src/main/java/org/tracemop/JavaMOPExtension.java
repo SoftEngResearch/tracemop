@@ -21,10 +21,22 @@ public class JavaMOPExtension extends AbstractEventSpy {
     private static String getAddOpens() {
         int version = Runtime.version().feature();
         if (version >= 9) {
-            return " --add-opens java.base/java.lang=ALL-UNNAMED"
+            String addOpens = " --add-opens java.base/java.lang=ALL-UNNAMED"
+                 + " --add-opens java.base/java.lang.reflect=ALL-UNNAMED"
                  + " --add-opens java.base/java.util=ALL-UNNAMED"
+                 + " --add-opens java.base/java.util.stream=ALL-UNNAMED"
+                 + " --add-opens java.base/java.util.concurrent=ALL-UNNAMED"
                  + " --add-opens java.base/java.io=ALL-UNNAMED"
-                 + " --add-opens java.base/java.net=ALL-UNNAMED";
+                 + " --add-opens java.base/java.nio=ALL-UNNAMED"
+                 + " --add-opens java.base/java.net=ALL-UNNAMED"
+                 + " --add-opens java.base/java.text=ALL-UNNAMED";
+            String nativeIndexingTree = System.getenv("NATIVE_INDEXING_TREE");
+            String mopNativeIndexingTree = System.getenv("MOP_NATIVE_INDEXING_TREE");
+            if ("true".equalsIgnoreCase(nativeIndexingTree) || "1".equals(nativeIndexingTree)
+                    || "true".equalsIgnoreCase(mopNativeIndexingTree) || "1".equals(mopNativeIndexingTree)) {
+                addOpens += " --add-opens java.base/java.lang.rv=ALL-UNNAMED";
+            }
+            return addOpens;
         }
         return "";
     }

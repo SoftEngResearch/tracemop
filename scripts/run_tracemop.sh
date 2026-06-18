@@ -54,7 +54,7 @@ if [[ ${TIMED} == "true" ]]; then
 fi
 
 if [[ ${COLLECT_TRACES} == "true" ]]; then
-  bash ${SCRIPT_DIR}/collect_traces.sh ${REPO} ${SHA} ${OUTPUT_DIR} ${TIMED} ${PER_TEST}
+  bash ${SCRIPT_DIR}/collect_traces.sh ${REPO} ${SHA} ${OUTPUT_DIR} ${TIMED} ${PER_TEST} "" ${STATS}
   
   mkdir -p ${OUTPUT_DIR}/logs/violations/traces
   cd ${OUTPUT_DIR}/project

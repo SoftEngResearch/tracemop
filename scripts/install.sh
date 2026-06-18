@@ -15,6 +15,7 @@ fi
 valg=false
 valg_value=""
 traj=false
+native_indexing_tree=false
 spec_configs=()
 
 while [[ $# -gt 0 ]]; do
@@ -36,6 +37,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -traj)
       traj=true
+      shift 1
+      ;;
+    -nativeindexingtree|--native-indexing-tree)
+      native_indexing_tree=true
       shift 1
       ;;
     -spec)
@@ -93,13 +98,26 @@ function install() {
   export PATH=${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/bin:${SCRIPT_DIR}/../javamop/target/release/javamop/javamop/bin:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor-rt.jar:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor.jar:${PATH}
   export CLASSPATH=${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor-rt.jar:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor.jar:${CLASSPATH}
   local props="props"
-  local agent="no-track-no-stats-agent"
+  local agent="${TRACK}-${STATS}-agent"
   if [[ ${TRACK} == "track" || ${SERIES} == true ]]; then
     props="props-track"
-    agent="track-no-stats-agent"
+    agent="track-${STATS}-agent"
   fi
- 
-  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${agent} . ${STATS} ${SERIES} true ${valg} ${valg_value} ${traj} "${spec_configs[@]}"
+
+  local native_indexing_tree_args=()
+  if [[ ${native_indexing_tree} == true ]]; then
+    native_indexing_tree_args+=("-nativeindexingtree")
+  fi
+
+  # Prefix the agent jar with the codegen (stock/native) so the two builds do
+  # not collide on the same filename in the workdir.
+  if [[ ${native_indexing_tree} == true ]]; then
+    agent="native-${agent}"
+  else
+    agent="stock-${agent}"
+  fi
+
+  bash ${SCRIPT_DIR}/make-agent.sh ${SCRIPT_DIR}/${props} . quiet ${TRACK} . ${agent} . ${STATS} ${SERIES} true ${valg} ${valg_value} ${traj} "${native_indexing_tree_args[@]}" "${spec_configs[@]}"
 
   if [[ ${TRACK} == "track" || ${SERIES} == true ]]; then
     # Add aspect
@@ -111,9 +129,9 @@ function install() {
     ajc TestNameAspect.aj -cp .:${CLASSPATH} -21
     mv TestNameAspect.class mop/TestNameAspect.class
 
-    zip ../track-no-stats-agent.jar mop/TestNameAspect.class
-    zip ../track-no-stats-agent.jar mop/BaseAspect.class
-    zip ../track-no-stats-agent.jar META-INF/aop-ajc.xml
+    zip ../${agent}.jar mop/TestNameAspect.class
+    zip ../${agent}.jar mop/BaseAspect.class
+    zip ../${agent}.jar META-INF/aop-ajc.xml
     rm -rf mop
     popd &> /dev/null
   fi
