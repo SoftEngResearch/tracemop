@@ -1,6 +1,7 @@
 package com.runtimeverification.rvmonitor.java.rvj.output.combinedoutputcode.newindexingtree;
 
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.CodeExpr;
+import com.runtimeverification.rvmonitor.java.rvj.output.codedom.CodeStmt;
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.CodeStmtCollection;
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.CodeVarRefExpr;
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.helper.ICodeFormatter;
@@ -64,6 +65,10 @@ public class IndexingTreeInterface implements ICodeGenerator {
 
     public RVMParameters getQueryParams() {
         return this.queryParams;
+    }
+
+    public RVMParameters getContentParams() {
+        return this.contentParams;
     }
 
     public String getPrettyName() {
@@ -164,6 +169,23 @@ public class IndexingTreeInterface implements ICodeGenerator {
                 this.specParams, weakrefs, inserter);
     }
 
+    // Native-only hook for folding simple full-key leaf creation into getOrCreate.
+    public boolean hasLeafGetOrCreate() {
+        return this.impl.hasLeafGetOrCreate(this.queryParams);
+    }
+
+    public CodeStmt generateLeafCreatedResetStmt() {
+        return this.impl.generateLeafCreatedResetStmt();
+    }
+
+    public CodeExpr generateLeafCreatedRef() {
+        return this.impl.generateLeafCreatedRef();
+    }
+
+    public CodeExpr generateLeafGetOrCreateExpr() {
+        return this.impl.generateLeafGetOrCreateExpr(this.queryParams);
+    }
+
     public CodeStmtCollection generateFindEntryWithStrongRefCode(
             WeakReferenceVariables weakrefs,
             StmtCollectionInserter<CodeExpr> inserter,
@@ -209,6 +231,15 @@ public class IndexingTreeInterface implements ICodeGenerator {
      */
     public Entry lookupEntry(RVMParameters params) {
         return this.impl.lookupEntry(params);
+    }
+
+    public boolean isNative() {
+        return this.impl.isNative();
+    }
+
+    public CodeStmtCollection generateNativePutCode(RVMParameters params,
+            CodeExpr valueref) {
+        return this.impl.generateNativePutCode(params, valueref);
     }
 
     @Override

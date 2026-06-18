@@ -63,6 +63,7 @@ public class CodeGenerationOption {
      * which can save a few operations per parameter.
      */
     private static boolean cacheKeyWeakReference;
+    private static boolean nativeIndexingTree;
 
     public static boolean isCacheKeyWeakReference() {
         return cacheKeyWeakReference;
@@ -72,7 +73,16 @@ public class CodeGenerationOption {
         cacheKeyWeakReference = on;
     }
 
+    public static boolean isNativeIndexingTree() {
+        return nativeIndexingTree;
+    }
+
+    public static void setNativeIndexingTree(boolean on) {
+        nativeIndexingTree = on;
+    }
+
     public static void initialize() {
         cacheKeyWeakReference = false;
+        nativeIndexingTree = com.runtimeverification.rvmonitor.java.rvj.Main.options.nativeindexingtree;
     }
 }

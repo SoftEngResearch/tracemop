@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.output.NotImplementedException;
+import com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption;
 import com.runtimeverification.rvmonitor.java.rvj.output.OptimizedCoenableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMonitorStatistics;
@@ -81,7 +82,9 @@ public abstract class Monitor {
                 + "\"";
 
         for (RVMParameter p : rvmSpec.getParameters()) {
-            mopRefs.put(p.getName(), new RVMVariable("RVMRef_" + p.getName()));
+            String prefix = CodeGenerationOption.isNativeIndexingTree() ? "RVM_"
+                    : "RVMRef_";
+            mopRefs.put(p.getName(), new RVMVariable(prefix + p.getName()));
         }
 
     }

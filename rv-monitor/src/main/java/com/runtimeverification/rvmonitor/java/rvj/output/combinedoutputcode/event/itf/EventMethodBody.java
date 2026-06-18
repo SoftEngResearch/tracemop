@@ -354,6 +354,9 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             WeakReferenceVariables weakrefs, boolean conditional) {
         CodeStmtCollection stmts = new CodeStmtCollection();
 
+        if (CodeGenerationOption.isNativeIndexingTree())
+            return stmts;
+
         for (RVMParameter param : this.eventParams) {
             CodeVarRefExpr weakref = new CodeVarRefExpr(
                     weakrefs.getWeakRef(param));
@@ -862,9 +865,14 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                             wrtype);
                     CodeFieldRefExpr wrfieldref = new CodeFieldRefExpr(
                             srcmonref, wrfield);
-                    CodeMethodInvokeExpr getref = new CodeMethodInvokeExpr(
-                            CodeType.object(), wrfieldref, "get");
-                    CodeExpr notnull = CodeBinOpExpr.isNotNull(getref);
+                    CodeExpr notnull;
+                    if (CodeGenerationOption.isNativeIndexingTree()) {
+                        notnull = CodeBinOpExpr.isNotNull(wrfieldref);
+                    } else {
+                        CodeMethodInvokeExpr getref = new CodeMethodInvokeExpr(
+                                CodeType.object(), wrfieldref, "get");
+                        notnull = CodeBinOpExpr.isNotNull(getref);
+                    }
                     ifalive = CodeBinOpExpr.logicalAnd(ifalive, notnull);
                 }
                 CodeStmtCollection alivebody = new CodeStmtCollection();
@@ -1193,7 +1201,8 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
      * @return generated code
      */
     private CodeStmtCollection generateDefineNewCode(
-            IndexingTreeQueryResult transition) {
+            IndexingTreeQueryResult transition,
+            boolean leafAlreadyInserted) {
         CodeStmtCollection stmts = new CodeStmtCollection();
 
         // It seems the original code assumes that defineNew:1--3 is not needed.
@@ -1206,7 +1215,12 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             }
         }
         CodeVarRefExpr monitorref;
-        {
+        if (leafAlreadyInserted) {
+            // Native getOrCreate allocated and inserted the leaf. Keep the
+            // remaining D(X) creation bookkeeping, but do not allocate again.
+            monitorref = transition.getEntryRef();
+            this.getMonitorFeatures().addRelatedEvent(this);
+        } else {
             CodeExpr arg = null;
             if (this.strategy.needsTimeTracking)
                 arg = this.getTimestamp().generateGetAndIncrementCode();
@@ -1216,9 +1230,9 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             monitorref = create.getDeclaredMonitorRef();
             stmts.add(create);
 
-            if (Main.options.series) { 
+            if (Main.options.series) {
                 stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
-                        CodeExpr.fromLegacy(CodeType.klass(), "TimeSeriesCollector"), "addMonitor", 
+                        CodeExpr.fromLegacy(CodeType.klass(), "TimeSeriesCollector"), "addMonitor",
                         CodeExpr.fromLegacy(CodeType.string(), "created.specName + \" @ \" + joinpoint.getSourceLocation().toString()"),
                         CodeExpr.fromLegacy(CodeType.string(), "created.monitorid"))));
             }
@@ -1228,8 +1242,8 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             SpecConfig config = Main.options.specConfigMap.get(this.rvmSpec.getName());
             if ((config == null || !config.disabled) &&
                 this.rvmSpec.getParameters().size() != 0 && !specList.contains(this.rvmSpec.getName())) {
-                CodeVariable rlAgent = new CodeVariable(CodeType.object(), "rlAgent");   
-                stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(), 
+                CodeVariable rlAgent = new CodeVariable(CodeType.object(), "rlAgent");
+                stmts.add(new CodeExprStmt(new CodeMethodInvokeExpr(CodeType.foid(),
                           new CodeVarRefExpr(rlAgent), "setMonitor", monitorref)));
             }
         }
@@ -1243,7 +1257,7 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
         }
 
         stmts.add(this.generateInsertMonitorCode(transition, transition,
-                monitorref, false, false));
+                monitorref, false, false, leafAlreadyInserted));
 
         return stmts;
     }
@@ -1272,12 +1286,22 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             IndexingTreeQueryResult created,
             IndexingTreeQueryResult transition, CodeVarRefExpr monitorref,
             boolean isDefineTo, boolean isFromMonitor) {
+        return this.generateInsertMonitorCode(created, transition, monitorref,
+                isDefineTo, isFromMonitor, false);
+    }
+
+    private CodeStmtCollection generateInsertMonitorCode(
+            IndexingTreeQueryResult created,
+            IndexingTreeQueryResult transition, CodeVarRefExpr monitorref,
+            boolean isDefineTo, boolean isFromMonitor,
+            boolean leafAlreadyInserted) {
         CodeStmtCollection stmts = new CodeStmtCollection();
 
         boolean forceleafupdate = false;
         if (!isDefineTo || isFromMonitor)
             forceleafupdate = true;
-        stmts.add(created.generateLeafUpdateCode(monitorref, forceleafupdate));
+        if (!leafAlreadyInserted)
+            stmts.add(created.generateLeafUpdateCode(monitorref, forceleafupdate));
 
         if (isFromMonitor) {
             if (transition.getEntry().getCodeType() instanceof CodeRVType.Tuple) {
@@ -1324,6 +1348,24 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
     }
 
     /**
+     * Use native getOrCreate for the simple full-key leaf case only. General,
+     * copy, Valg/traj, and series paths have creation-time side effects that
+     * must stay in stock D(X) order.
+     */
+    private boolean canUseNativeLeafGetOrCreate() {
+        if (!CodeGenerationOption.isNativeIndexingTree())
+            return false;
+        if (!this.event.isStartEvent())
+            return false;
+        if (this.strategy.needsTimeTracking
+                || this.strategy.mayCopyFromOtherMonitors)
+            return false;
+        if (Main.options.valg || Main.options.traj || Main.options.series)
+            return false;
+        return this.getMatchedIndexingTree().hasLeafGetOrCreate();
+    }
+
+    /**
      * Generated code that corresponds to main:1--6 in Algorithm D(X).
      *
      * @param transition
@@ -1332,7 +1374,8 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
      * @return generated code
      */
     private CodeStmtCollection generateMonitorCreation(
-            IndexingTreeQueryResult transition) {
+            IndexingTreeQueryResult transition,
+            boolean leafCreatedByGetOrCreate) {
         CodeStmtCollection stmts = new CodeStmtCollection();
 
         stmts.comment("D(X) main:1");
@@ -1340,12 +1383,15 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
                 Access.Leaf, "matched");
         stmts.add(codepair.getGeneratedCode());
         CodeVarRefExpr leafref = codepair.getLogicalReturn();
-        
-        CodeBinOpExpr if1cond = CodeBinOpExpr.isNull(leafref);
+
+        CodeExpr if1cond = leafCreatedByGetOrCreate
+                ? this.getMatchedIndexingTree().generateLeafCreatedRef()
+                : CodeBinOpExpr.isNull(leafref);
         CodeStmtCollection if1body = new CodeStmtCollection();
         stmts.add(new CodeConditionStmt(if1cond, if1body));
 
-        if (!CodeGenerationOption.isCacheKeyWeakReference())
+        if (!CodeGenerationOption.isNativeIndexingTree()
+                && !CodeGenerationOption.isCacheKeyWeakReference())
             if1body.add(this.generateWeakReferenceLookup(
                     transition.getWeakRefs(), true));
 
@@ -1358,7 +1404,8 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
         if (this.event.isStartEvent()) {
             CodeStmtCollection nested = new CodeStmtCollection();
             nested.comment("D(X) main:4");
-            nested.add(this.generateDefineNewCode(transition));
+            nested.add(this.generateDefineNewCode(transition,
+                    leafCreatedByGetOrCreate));
             if (maynotnull)
                 if1body.add(new CodeConditionStmt(if1cond, nested));
             else
@@ -1370,6 +1417,18 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             if1body.add(this.generateDisableUpdateCode(transition));
         }
 
+        return stmts;
+    }
+
+    private CodeStmtCollection generateTreeLookup(
+            IndexingTreeQueryResult transition,
+            boolean useNativeLeafGetOrCreate) {
+        if (!useNativeLeafGetOrCreate)
+            return this.generateIndexingTreeLookup(transition);
+
+        CodeStmtCollection stmts = new CodeStmtCollection();
+        stmts.add(new CodeAssignStmt(transition.getEntryRef(),
+                this.getMatchedIndexingTree().generateLeafGetOrCreateExpr()));
         return stmts;
     }
 
@@ -1546,10 +1605,17 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             cachehitref = new CodeVarRefExpr(cachehit);
         }
 
+        boolean useNativeLeafGetOrCreate = this.canUseNativeLeafGetOrCreate();
+        if (useNativeLeafGetOrCreate) {
+            // Cache hits do not call the factory, so the miss flag must be
+            // cleared before the cache lookup.
+            stmts.add(this.getMatchedIndexingTree().generateLeafCreatedResetStmt());
+        }
+
         CodeConditionStmt cacheLookup = this.generateCacheLookup(weakrefs,
                 transition.getEntryRef(), cachehitref);
-        CodeStmtCollection treeLookup = this
-                .generateIndexingTreeLookup(transition);
+        CodeStmtCollection treeLookup = this.generateTreeLookup(transition,
+                useNativeLeafGetOrCreate);
         if (cacheLookup == null)
             stmts.add(treeLookup);
         else {
@@ -1558,7 +1624,8 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
         }
 
         if (this.strategy.mayCreateMonitors)
-            stmts.add(this.generateMonitorCreation(transition));
+            stmts.add(this.generateMonitorCreation(transition,
+                    useNativeLeafGetOrCreate));
 
         CodeStmtCollection cacheupdate = this.generateCacheUpdate(
                 transition.getEntryRef(), cachehitref);

@@ -16,9 +16,7 @@ public class Imports {
             "java.util.*",
     	    "java.util.Random",
             "java.io.*",
-            "java.lang.ref.*",
             "com.runtimeverification.rvmonitor.java.rt.*",
-            "com.runtimeverification.rvmonitor.java.rt.ref.*",
             "com.runtimeverification.rvmonitor.java.rt.table.*",
     	    "com.runtimeverification.rvmonitor.java.rt.rlagent.*",
             // "com.runtimeverification.rvmonitor.java.rt.util.TimeSeries",
@@ -31,6 +29,10 @@ public class Imports {
             "com.runtimeverification.rvmonitor.java.rt.tablebase.IMonitor",
             "com.runtimeverification.rvmonitor.java.rt.tablebase.DisableHolder",
             "com.runtimeverification.rvmonitor.java.rt.tablebase.TerminatedMonitorCleaner", };
+
+    private final String[] weakReferences = {
+            "java.lang.ref.*",
+            "com.runtimeverification.rvmonitor.java.rt.ref.*", };
 
     private final String[] observer = {
             "com.runtimeverification.rvmonitor.java.rt.observable.IInternalBehaviorObserver",
@@ -63,6 +65,11 @@ public class Imports {
         }
 
         this.addImports(this.required);
+
+        if (Main.options.nativeindexingtree)
+            imports.add("java.lang.rv.*");
+        else
+            this.addImports(this.weakReferences);
 
         if (Main.options.internalBehaviorObserving)
             this.addImports(this.observer);

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.runtimeverification.rvmonitor.java.rvj.output.NotImplementedException;
+import com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.CodeFieldRefExpr;
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.CodeLiteralExpr;
@@ -73,9 +74,16 @@ public class WeakReferenceVariables {
         this.mapping = new HashMap<RVMParameter, CodeVariable>();
 
         for (RVMParameter param : params) {
-            RefTree gwrt = trees.refTrees.get(param.getType().toString());
-            CodeType type = gwrt.getResultFQType();
-            CodeVariable var = CodeHelper.VariableName.getWeakRef(type, param);
+            CodeType type;
+            CodeVariable var;
+            if (CodeGenerationOption.isNativeIndexingTree()) {
+                type = new CodeType(param.getType().toString());
+                var = new CodeVariable(type, param.getName());
+            } else {
+                RefTree gwrt = trees.refTrees.get(param.getType().toString());
+                type = gwrt.getResultFQType();
+                var = CodeHelper.VariableName.getWeakRef(type, param);
+            }
 
             this.params.add(param);
             this.mapping.put(param, var);
@@ -105,6 +113,9 @@ public class WeakReferenceVariables {
 
     public CodeStmtCollection getDeclarationCode() {
         CodeStmtCollection stmts = new CodeStmtCollection();
+        if (CodeGenerationOption.isNativeIndexingTree())
+            return stmts;
+
         for (Map.Entry<RVMParameter, CodeVariable> entry : this.mapping
                 .entrySet()) {
             CodeVarDeclStmt decl = new CodeVarDeclStmt(entry.getValue(),

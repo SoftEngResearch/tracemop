@@ -6,6 +6,7 @@ import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
 import com.runtimeverification.rvmonitor.java.rvj.RVMNameSpace;
+import com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption;
 import com.runtimeverification.rvmonitor.java.rvj.output.OptimizedCoenableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMVariable;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMonitorStatistics;
@@ -37,6 +38,9 @@ public class MonitorTermination {
     }
 
     public String getRefType(RVMParameter p) {
+        if (CodeGenerationOption.isNativeIndexingTree())
+            return p.getType().toString();
+
         if (refTrees != null) {
             RefTree refTree = refTrees.get(p.getType().toString());
             return refTree.getResultType();
@@ -48,12 +52,17 @@ public class MonitorTermination {
         this.refTrees = refTrees;
 
         for (RVMParameter param : parameters) {
-            references.put(param, new RVMVariable("RVMRef_" + param.getName()));
+            String prefix = CodeGenerationOption.isNativeIndexingTree() ? "RVM_"
+                    : "RVMRef_";
+            references.put(param, new RVMVariable(prefix + param.getName()));
         }
     }
 
     public String copyAliveParameters(RVMVariable toMonitor,
             RVMVariable fromMonitor) {
+        if (CodeGenerationOption.isNativeIndexingTree())
+            return "";
+
         String ret = "";
 
         for (int j = 0; j < coenableSet.getParameterGroups().size(); j++) {
@@ -93,6 +102,27 @@ public class MonitorTermination {
             }
         }
         ret += "\n";
+
+        if (CodeGenerationOption.isNativeIndexingTree()) {
+            ret += "@Override\n";
+            ret += "protected" + synch
+                    + "final void terminateInternal(int idnum) {\n";
+            ret += "return;\n";
+            ret += "}\n";
+            ret += "\n";
+
+            if (Main.options.statistics) {
+                ret += "protected void finalize() throws Throwable {\n";
+                ret += "try {\n";
+                ret += stat.incCollectedMonitor();
+                ret += "} finally {\n";
+                ret += "super.finalize();\n";
+                ret += "}\n";
+                ret += "}\n";
+            }
+
+            return ret;
+        }
 
         for (int j = 0; j < coenableSet.getParameterGroups().size(); j++) {
             ret += "//alive_parameters_" + j + " = "

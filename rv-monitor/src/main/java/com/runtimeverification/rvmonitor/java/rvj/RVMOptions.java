@@ -69,6 +69,9 @@ public class RVMOptions {
              "one event that carries each parameter only.")
     public boolean partitionedset;
 
+    @Parameter(names={"-nativeindexingtree"}, description = "Use java.lang.rv.IndexingTree as the physical indexing-tree backend.")
+    public boolean nativeindexingtree;
+
     @Parameter(names={"-atomicmonitor"},description = "Experimental(?)")
     public boolean atomicmonitor;
 

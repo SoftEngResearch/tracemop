@@ -30,7 +30,11 @@ public class CodeHelper {
             // The following convention had been hard-coded in the
             // monitor-generating class; so,
             // I followed it.
-            String fieldname = "RVMRef_" + param.getName();
+            String fieldname;
+            if (com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption.isNativeIndexingTree())
+                fieldname = "RVM_" + param.getName();
+            else
+                fieldname = "RVMRef_" + param.getName();
             return new CodeMemberField(fieldname, true, false, false,
                     weakreftype);
         }
@@ -142,6 +146,14 @@ public class CodeHelper {
             String pkgname = "com.runtimeverification.rvmonitor.java.rt.ref";
             String clsname = "CachedWeakReference";
             return new CodeType(pkgname, clsname);
+        }
+
+        public static CodeType getNativeIndexingTree() {
+            return new CodeType("java.lang.rv", "IndexingTree");
+        }
+
+        public static CodeType getRuntimeMonitorFactory() {
+            return new CodeType("java.lang.rv", "RuntimeMonitorFactory");
         }
 
         public static CodeType getSetEventDelegator(CodeType monitor,

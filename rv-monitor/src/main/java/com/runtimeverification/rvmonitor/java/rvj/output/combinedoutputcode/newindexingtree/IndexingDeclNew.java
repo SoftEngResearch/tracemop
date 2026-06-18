@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
+import com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption;
 import com.runtimeverification.rvmonitor.java.rvj.output.EnableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.NotImplementedException;
 import com.runtimeverification.rvmonitor.java.rvj.output.codedom.CodeMemberField;
@@ -179,8 +180,13 @@ public class IndexingDeclNew {
                         monitor, evttype, needsTimeTracking);
             }
 
-            combineCentralIndexingTrees();
-            combineRefTreesIntoIndexingTrees();
+            if (CodeGenerationOption.isNativeIndexingTree()) {
+                combineNativeIndexingTrees(rvmSpec.getName(), monitorSet,
+                        monitor);
+            } else {
+                combineCentralIndexingTrees();
+                combineRefTreesIntoIndexingTrees();
+            }
 
             monitorSet.feedIndexingTreeImplementation(this);
         } else {
@@ -295,6 +301,83 @@ public class IndexingDeclNew {
                     break;
                 }
             }
+        }
+    }
+
+    private void combineNativeIndexingTrees(String outputName,
+            MonitorSet monitorSet, SuffixMonitor monitor) {
+        if (!rvmSpec.isCentralized())
+            return;
+
+        List<IndexingTreeInterface> candidates = new ArrayList<IndexingTreeInterface>();
+        for (IndexingTreeInterface itf : this.indexingTrees.values()) {
+            if (itf.isFullyFledgedTree())
+                candidates.add(itf);
+        }
+
+        List<IndexingTreeInterface> masters = new ArrayList<IndexingTreeInterface>();
+        for (IndexingTreeInterface candidate : candidates) {
+            boolean coveredByLarger = false;
+            RVMParameters candidateParams = candidate.getQueryParams();
+            for (IndexingTreeInterface other : candidates) {
+                if (candidate == other)
+                    continue;
+                RVMParameters otherParams = other.getQueryParams();
+                if (otherParams.size() > candidateParams.size()
+                        && otherParams.contains(candidateParams)) {
+                    coveredByLarger = true;
+                    break;
+                }
+            }
+            if (!coveredByLarger)
+                masters.add(candidate);
+        }
+
+        Set<IndexingTreeInterface> assigned = new HashSet<IndexingTreeInterface>();
+        for (IndexingTreeInterface master : masters) {
+            Map<RVMParameters, IndexingTreeImplementation.Entry> logicalEntries = new HashMap<RVMParameters, IndexingTreeImplementation.Entry>();
+            List<IndexingTreeInterface> covered = new ArrayList<IndexingTreeInterface>();
+            RVMParameters backingParams = master.getQueryParams();
+
+            for (IndexingTreeInterface candidate : candidates) {
+                if (assigned.contains(candidate))
+                    continue;
+                RVMParameters candidateParams = candidate.getQueryParams();
+                if (backingParams.contains(candidateParams)) {
+                    covered.add(candidate);
+                    logicalEntries.put(candidateParams, candidate
+                            .getImplementation().lookupEntry(candidateParams));
+                }
+            }
+
+            if (covered.size() == 0)
+                continue;
+
+            EventKind evttype = this.calculateEventType(backingParams);
+            boolean needsTimeTracking = rvmSpec.isGeneral();
+            NativeIndexingTreeImplementation impl = new NativeIndexingTreeImplementation(
+                    master, outputName, specParam, backingParams, null,
+                    monitorSet, monitor, evttype, needsTimeTracking,
+                    logicalEntries);
+
+            for (IndexingTreeInterface itf : covered) {
+                itf.switchImplementation(impl);
+                assigned.add(itf);
+            }
+        }
+
+        for (IndexingTreeInterface itf : this.indexingTreesForCopy.values()) {
+            if (!itf.isFullyFledgedTree())
+                continue;
+            RVMParameters backingParams = itf.getQueryParams();
+            Map<RVMParameters, IndexingTreeImplementation.Entry> logicalEntries = new HashMap<RVMParameters, IndexingTreeImplementation.Entry>();
+            logicalEntries.put(backingParams, itf.getImplementation()
+                    .lookupEntry(backingParams));
+            NativeIndexingTreeImplementation impl = new NativeIndexingTreeImplementation(
+                    itf, outputName, specParam, backingParams,
+                    itf.getContentParams(), monitorSet, monitor,
+                    EventKind.AlwaysCreate, rvmSpec.isGeneral(), logicalEntries);
+            itf.switchImplementation(impl);
         }
     }
 

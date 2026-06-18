@@ -11,6 +11,7 @@ import java.util.TreeMap;
 
 import com.runtimeverification.rvmonitor.java.rvj.Main;
 import com.runtimeverification.rvmonitor.java.rvj.SpecConfig;
+import com.runtimeverification.rvmonitor.java.rvj.output.CodeGenerationOption;
 import com.runtimeverification.rvmonitor.java.rvj.output.OptimizedCoenableSet;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCode;
 import com.runtimeverification.rvmonitor.java.rvj.output.RVMJavaCodeNoNewLine;
@@ -392,11 +393,16 @@ public class BaseMonitor extends Monitor {
                 if (!event.getRVMParametersOnSpec().contains(p)) {
                     RVMVariable v = this.varsToSave.get(p);
 
-                    ret += p.getType() + " " + p.getName() + " = null;\n";
-                    ret += "if(" + v + " != null){\n";
-                    ret += p.getName() + " = (" + p.getType() + ")" + v
-                           + ".get();\n";
-                    ret += "}\n";
+                    if (CodeGenerationOption.isNativeIndexingTree()) {
+                        ret += p.getType() + " " + p.getName() + " = " + v
+                                + ";\n";
+                    } else {
+                        ret += p.getType() + " " + p.getName() + " = null;\n";
+                        ret += "if(" + v + " != null){\n";
+                        ret += p.getName() + " = (" + p.getType() + ")" + v
+                               + ".get();\n";
+                        ret += "}\n";
+                    }
                 }
             }
 
@@ -423,7 +429,10 @@ public class BaseMonitor extends Monitor {
                 RVMVariable v = varsToSave.get(p);
 
                 ret += "if(" + v + " == null){\n";
-                ret += v + " = new WeakReference(" + p.getName() + ");\n";
+                if (CodeGenerationOption.isNativeIndexingTree())
+                    ret += v + " = " + p.getName() + ";\n";
+                else
+                    ret += v + " = new WeakReference(" + p.getName() + ");\n";
                 ret += "}\n";
             }
         }
@@ -847,8 +856,12 @@ public class BaseMonitor extends Monitor {
         }
 
         // references for saved parameters
-        for (RVMVariable v : varsToSave.values()) {
-            ret += "WeakReference " + v + " = null;\n";
+        for (RVMParameter p : varsToSave.keySet()) {
+            RVMVariable v = varsToSave.get(p);
+            if (CodeGenerationOption.isNativeIndexingTree())
+                ret += p.getType() + " " + v + " = null;\n";
+            else
+                ret += "WeakReference " + v + " = null;\n";
         }
 
         if (existCondition) {

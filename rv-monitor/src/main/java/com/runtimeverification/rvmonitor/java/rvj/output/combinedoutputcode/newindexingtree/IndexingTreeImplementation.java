@@ -315,6 +315,31 @@ public class IndexingTreeImplementation implements ICodeGenerator {
         return this.topEntry.lookupEntry(params);
     }
 
+    boolean isNative() {
+        return false;
+    }
+
+    CodeStmtCollection generateNativePutCode(RVMParameters queryprms,
+            CodeExpr valueref) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean hasLeafGetOrCreate(RVMParameters queryprms) {
+        return false;
+    }
+
+    public CodeStmt generateLeafCreatedResetStmt() {
+        throw new UnsupportedOperationException();
+    }
+
+    public CodeExpr generateLeafCreatedRef() {
+        throw new UnsupportedOperationException();
+    }
+
+    public CodeExpr generateLeafGetOrCreateExpr(RVMParameters queryprms) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public void getCode(ICodeFormatter fmt) {
         this.field.getCode(fmt);

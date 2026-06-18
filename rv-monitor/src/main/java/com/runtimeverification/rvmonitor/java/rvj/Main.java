@@ -359,6 +359,10 @@ public class Main {
             options.trackEventLocations = true;
         }
 
+        if (options.nativeindexingtree && options.partitionedset) {
+            throw new ParameterException("-nativeindexingtree cannot be combined with -partitionedset");
+        }
+
         File dotTraces = new File(options.artifactsDir, ".traces");
         if (!dotTraces.exists()) {
             dotTraces.mkdirs();

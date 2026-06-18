@@ -202,8 +202,10 @@ public class CombinedOutput {
 
         ret += categoryVarsDecl();
 
-        ret += "private static com.runtimeverification.rvmonitor.java.rt.map.RVMMapManager "
-                + mapManager + ";\n";
+        if (!Main.options.nativeindexingtree) {
+            ret += "private static com.runtimeverification.rvmonitor.java.rt.map.RVMMapManager "
+                    + mapManager + ";\n";
+        }
 
         ret += this.statManager.fieldDecl2();
 
@@ -212,10 +214,12 @@ public class CombinedOutput {
 
         ret += this.eventManager.printConstructor();
 
-        ret += mapManager
-                + " = "
-                + "new com.runtimeverification.rvmonitor.java.rt.map.RVMMapManager();\n";
-        ret += mapManager + ".start();\n";
+        if (!Main.options.nativeindexingtree) {
+            ret += mapManager
+                    + " = "
+                    + "new com.runtimeverification.rvmonitor.java.rt.map.RVMMapManager();\n";
+            ret += mapManager + ".start();\n";
+        }
 
         ret += this.statManager.constructor();
 
