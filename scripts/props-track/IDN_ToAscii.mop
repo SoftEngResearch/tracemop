@@ -15,12 +15,27 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
  * @severity error
  */
 IDN_ToAscii() {
+	private boolean isAsciiSafe(String input) {
+		for (int i = 0; i < input.length(); ++i) {
+			int c = input.charAt(i);
+			if (c > 0x7f)
+				return false;
+		}
+		return true;
+	}
+
 	event e97 before(String input) :
 		(
 			call(* IDN.toASCII(String)) ||
 			call(* IDN.toASCII(String, int))
 		) && args(input, ..)
 	{
+		boolean safe = this.isAsciiSafe(input);
+
+		if (!safe) {
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "The input to IDN.toASCII() should not be used in an internationalized domain name.");
+		}
 	}
 }
 

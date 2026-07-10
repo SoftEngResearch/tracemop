@@ -17,6 +17,8 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 File_LengthOnDirectory() {
 	event e92 before(File f) :
 		call(* File+.length()) && target(f) && condition(f.isDirectory()) {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "length() was invoked on a File instance that represents a directory.");
 	}
 }
 

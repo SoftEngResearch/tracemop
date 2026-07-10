@@ -19,10 +19,20 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 Map_ItselfAsValue() {
 	event e148 before(Map map, Object key, Object value) :
 		call(* Map+.put(Object, Object)) && target(map) && args(key, value) {
+		if (value == map) {
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "A map cannot contain itself as a value.");
+		}
 	}
 
 	event e149 before(Map map, Map src) :
 		call(* Map+.putAll(Map)) && target(map) && args(src) {
+		for (Map.Entry entry : (Set<Map.Entry>)src.entrySet()) {
+			if (entry.getValue() == map) {
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "A map cannot contain itself as a value.");
+			}
+		}
 	}
 }
 

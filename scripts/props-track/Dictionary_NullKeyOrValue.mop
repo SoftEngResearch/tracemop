@@ -20,6 +20,8 @@ Dictionary_NullKeyOrValue() {
 	event e88 before(Dictionary d, Object key, Object value) :
 		call(* Dictionary+.put(..)) && args(key, value) && target(d) &&
 		condition(key == null || value == null) {
+		RVMLogging.out.println(Level.WARNING, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.WARNING, "Dictionary allow neither null key nor null value.");
 	}
 }
 

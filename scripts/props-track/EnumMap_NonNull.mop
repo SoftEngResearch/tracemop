@@ -18,9 +18,17 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 EnumMap_NonNull() {
 	event e89 before(Object e) :
 		call(* EnumMap.put(Object, Object)) && args(e, ..) && condition(e == null) {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "EnumMap does not permit null.");
 	}
 	event e89 before(Map m) :
 		call(* EnumMap.putAll(Map)) && args(m) {
+		for (Map.Entry entry : (Set<Map.Entry>)m.entrySet()) {
+			if (entry.getKey() == null) {
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "EnumMap does not permit null.");
+			}
+		}
 	}
 }
 

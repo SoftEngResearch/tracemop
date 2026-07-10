@@ -25,8 +25,35 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
  */
 
 Collections_ImplementComparable() {
+	private void validate(Object[] arr, String msg)
+	{
+		for (int i = 0; i < arr.length; ++i) {
+			// Each element must implement the Comparable interface.
+			Object o1 = arr[i];
+			if (!(o1 instanceof Comparable)) {
+				RVMLogging.out.println(Level.CRITICAL, msg);
+				RVMLogging.out.println(Level.CRITICAL, i + "-th element does not implement the Comparable interface.");
+			}
+			Comparable c1 = (Comparable)o1;
+
+			// All elements must be mutually comparable.
+			for (int j = i + 1; j < arr.length; ++j) {
+				try {
+					Comparable c2 = (Comparable)arr[j];
+					c1.compareTo(c2);
+					c2.compareTo(c1);
+				}
+				catch (ClassCastException e) {
+					RVMLogging.out.println(Level.CRITICAL, msg);
+					RVMLogging.out.println(Level.CRITICAL, i + "-th element and " + j + "-th element are not comparable.");
+				}
+			}
+		}
+	}
+
 	event e49 before(List list) :
 		call(void Collections.sort(List)) && args(list) {
+		this.validate(list.toArray(), __DEFAULT_MESSAGE);
 	}
 
 	event e48 before(Collection col) :
@@ -34,6 +61,7 @@ Collections_ImplementComparable() {
 			call(* Collections.min(Collection)) ||
 			call(* Collections.max(Collection))
 		) && args(col) {
+		this.validate(col.toArray(), __DEFAULT_MESSAGE);
 	}
 }
 

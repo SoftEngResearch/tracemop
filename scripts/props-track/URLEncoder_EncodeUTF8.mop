@@ -17,6 +17,11 @@ URLEncoder_EncodeUTF8() {
 	event e386 before(String enc) :
 		call(* URLEncoder.encode(String, String)) && args(*, enc)
 	{
+		if (enc.equalsIgnoreCase("utf-8") || enc.equalsIgnoreCase("utf8"))
+			return;
+
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "The used encoding '" + enc + "' may introduce incompatibilites.");
 	}
 }
 

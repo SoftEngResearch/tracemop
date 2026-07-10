@@ -23,6 +23,13 @@ DatagramPacket_SetLength() {
 	event e82 before(DatagramPacket packet, int length) :
 		call(void DatagramPacket.setLength(int)) && target(packet) && args(length)
 	{
+		int offset = packet.getOffset();
+		byte[] buffer = packet.getData();
+		if (length + offset <= buffer.length)
+			return;
+
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "The length argument is out of range; " + offset + " + " + length + " > " + buffer.length);
 	}
 }
 

@@ -20,8 +20,12 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 
 CharSequence_UndefinedHashCode() {
 	event e31 before() : call(* CharSequence+.equals(..)) && !target(String) && !target(CharBuffer){
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "equals and hashCode methods might not be supported in CharSequence"); 
 	}
 	
 	event e32 before() : call(* CharSequence+.hashCode(..)) && !target(String) && !target(CharBuffer){
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "equals and hashCode methods might not be supported in CharSequence"); 
 	}
 }

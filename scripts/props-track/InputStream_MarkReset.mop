@@ -31,5 +31,7 @@ InputStream_MarkReset() {
 			|| target(SequenceInputStream)
 		)
 		{
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "FileInputStream, PushbackInputStream, ObjectInputStream, PipedInputStream and SequenceInputStream do not support mark() and reset().");
 		}
 }

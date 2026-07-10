@@ -22,6 +22,8 @@ ContentHandler_GetContent() {
 	event e79 before() : 
 		call(* ContentHandler+.getContent(..))
 	{
+		RVMLogging.out.println(Level.WARNING, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.WARNING, "An application does not generally call ContentHandler.getContent().");
 	}
 }
 

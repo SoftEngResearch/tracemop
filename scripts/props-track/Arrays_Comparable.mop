@@ -27,6 +27,28 @@ Arrays_Comparable() {
 			call(void Arrays.sort(Object[])) ||
 			call(void Arrays.sort(Object[], ..))
 		) && args(arr, ..) {
+		for (int i = 0; i < arr.length; ++i) {
+			// Each element must implement the Comparable interface.
+			Object o1 = arr[i];
+			if (!(o1 instanceof Comparable)) {
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, i + "-th element does not implement the Comparable interface.");
+			}
+			Comparable c1 = (Comparable)o1;
+
+			// All elements must be mutually comparable.
+			for (int j = i + 1; j < arr.length; ++j) {
+				try {
+					Comparable c2 = (Comparable)arr[j];
+					c1.compareTo(c2);
+					c2.compareTo(c1);
+				}
+				catch (ClassCastException e) {
+					RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+					RVMLogging.out.println(Level.CRITICAL, i + "-th element and " + j + "-th element are not comparable.");
+				}
+			}
+		}
 	}
 }
 

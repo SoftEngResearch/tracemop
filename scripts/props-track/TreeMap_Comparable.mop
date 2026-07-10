@@ -20,16 +20,32 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
  */
 
 TreeMap_Comparable() {
+	private void validate(Object elem, String msg) {
+		if (!(elem instanceof Comparable)) {
+			RVMLogging.out.println(Level.CRITICAL, msg);
+			RVMLogging.out.println(Level.CRITICAL, "A non-comparable object is being inserted into a TreeMap object.");
+		}
+	}
+
+	private void validateAll(Map src, String msg) {
+		for (Map.Entry entry : (Collection<Map.Entry>)src.entrySet()) {
+			validate(entry.getKey(), msg);
+		}
+	}
+
 	event e375 before(Map src) :
 		call(TreeMap.new(Map)) && args(src) {
+		validateAll(src, __DEFAULT_MESSAGE);
 	}
 
 	event e376 before(Object key) :
 		call(* Map+.put(Object, Object)) && args(key, ..) && target(TreeMap){
+		validate(key, __DEFAULT_MESSAGE);
 	}
 
 	event e377 before(Map src) :
 		call(* Map+.putAll(Map)) && args(src) &&target(TreeMap){
+		validateAll(src, __DEFAULT_MESSAGE);
 	}
 }
 

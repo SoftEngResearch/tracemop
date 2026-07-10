@@ -21,10 +21,14 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 Object_MonitorOwner() {
 	event e186 before(Object o): 
 		(call(* Object+.notify(..)) || call(* Object+.notifyAll(..)))&& target(o) && if(!Thread.holdsLock(o)) {
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "notify() and notifyAll() can be called only by the owner of this object's monitor.");
 		}
         
 	event e187 before(Object o): 
 		call(* Object+.wait(..)) && target(o) && if(!Thread.holdsLock(o)) {
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "wait() can be called only by the owner of this object's monitor.");
 		}
         
     

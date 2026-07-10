@@ -24,8 +24,28 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
  */
 
 Collections_Comparable() {
+	private void validate(Object[] arr, Comparator comp, String msg)
+	{
+		for (int i = 0; i < arr.length; ++i) {
+			Object o1 = arr[i];
+
+			for (int j = i + 1; j < arr.length; ++j) {
+				Object o2 = arr[j];
+				try {
+					comp.compare(o1, o2);
+					comp.compare(o2, o1);
+				}
+				catch (ClassCastException e) {
+					RVMLogging.out.println(Level.CRITICAL, msg);
+					RVMLogging.out.println(Level.CRITICAL, i + "-th element and " + j + "-th element are not comparable.");
+				}
+			}
+		}
+	}
+
 	event e46 before(List list, Comparator comp) :
 		call(void Collections.sort(List, Comparator)) && args(list, comp) {
+		this.validate(list.toArray(), comp, __DEFAULT_MESSAGE);
 	}
 
 	event e45 before(Collection col, Comparator comp) :
@@ -33,6 +53,7 @@ Collections_Comparable() {
 			call(* Collections.min(Collection, Comparator)) ||
 			call(* Collections.max(Collection, Comparator))
 		) && args(col, comp) {
+		this.validate(col.toArray(), comp, __DEFAULT_MESSAGE);
 	}
 }
 

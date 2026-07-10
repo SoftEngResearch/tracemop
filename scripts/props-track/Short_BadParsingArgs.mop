@@ -17,10 +17,39 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 Short_BadParsingArgs() {
 	event e279 before(String s, int radix) : 
 		call(* Short.parseShort(String, int)) && args(s, radix) {
+			if(s == null || s.length() == 0){
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "Wrong argument to Short.parseShort(String s, int radix)");
+			} else if(radix < java.lang.Character.MIN_RADIX || radix > java.lang.Character.MAX_RADIX){
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "Wrong argument to Short.parseShort(String s, int radix)");
+			} else {
+				for(int j = 0; j < s.length(); j++){
+					if(Character.digit(s.charAt(j), radix) == -1){
+						if(!(j == 0 && s.length() > 1 && s.charAt(0) == '-')){
+							RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+							RVMLogging.out.println(Level.CRITICAL, "Wrong argument to Short.parseShort(String s, int radix)");
+						}
+					} 
+				}
+			}
 		}
 
 	event e280 before(String s) : 
 		call(* Short.parseShort(String)) && args(s) {
+			if(s == null || s.length() == 0){
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "Wrong argument to Short.parseShort(String s)");
+			} else {
+				for(int j = 0; j < s.length(); j++){
+					if(Character.digit(s.charAt(j), 10) == -1){
+						if(!(j == 0 && s.length() > 1 && s.charAt(0) == '-')){
+							RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+							RVMLogging.out.println(Level.CRITICAL, "Wrong argument to Short.parseShort(String s)");
+						}
+					} 
+				}
+			}
 		}
 		
 }

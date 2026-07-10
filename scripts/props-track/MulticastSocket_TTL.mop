@@ -13,14 +13,24 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
  * @severity error
  */
 MulticastSocket_TTL() {
+	private void check(String msg, int ttl) {
+		if (0 <= ttl && ttl <= 255)
+			return;
+
+		RVMLogging.out.println(Level.CRITICAL, msg);
+		RVMLogging.out.println(Level.CRITICAL, "The specified TTL " + ttl + " is out of range; [0 ~ 255]");
+	}
+
 	event e160 before(byte ttl) :
 		call(* MulticastSocket+.setTTL(byte)) && args(ttl)
 	{
+		this.check(__DEFAULT_MESSAGE, ttl & 0xff);
 	}
 
 	event e161 before(int ttl) :
 		call(* MulticastSocket+.setTimeToLive(int)) && args(ttl)
 	{
+		this.check(__DEFAULT_MESSAGE, ttl);
 	}
 }
 

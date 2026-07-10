@@ -22,5 +22,7 @@ ArrayDeque_NonNull() {
 			call(* ArrayDeque.offer*(..)) ||
 			call(* ArrayDeque.push(..))
 		) && args(Object+)  && args(e) && condition(e == null) {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "ArrayDeque does not permit null.");
 	}
 }

@@ -30,10 +30,14 @@ InvalidPropertiesFormatException_NonSerializable() {
 	event e114 before(ObjectOutputStream out, InvalidPropertiesFormatException obj) :
 		call(* ObjectOutputStream+.writeObject(..)) &&
 		target(out) && args(obj) {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "InvalidPropertiesFormatException is not intended to be Serialized.");
 	}
 
 	event e113 after(ObjectInputStream in) returning(InvalidPropertiesFormatException obj) :
 		call(* ObjectInputStream+.readObject(..)) && target(in) {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "InvalidPropertiesFormatException is not intended to be Serialized.");
 	}
 }
 

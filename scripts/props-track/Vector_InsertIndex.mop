@@ -17,6 +17,10 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 Vector_InsertIndex() {
 	event e388 before(Vector v, int index) :
 		call(* Vector+.insertElementAt(Object, int)) && target(v) && args(.., index) {
+		if (!(0 <= index && index <= v.size())) {
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "The index passed to insertElementAt() is invalid.");
+		}
 	}
 }
 

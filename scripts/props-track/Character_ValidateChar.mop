@@ -19,10 +19,18 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 Character_ValidateChar() {
     event e33 before(int codePoint): 
         call(* Character.charCount(int)) && args(codePoint) {
+            if(!Character.isValidCodePoint(codePoint)){
+                RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+                RVMLogging.out.println(Level.CRITICAL, "The code point used in charCount(int codePoint) is not valid.");
+            }
         }
 
     event e34 before(char high, char low): 
         call(* Character.toCodePoint(char, char)) && args(high, low) {
+            if(!Character.isSurrogatePair(high, low)){
+                RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+                RVMLogging.out.println(Level.CRITICAL, "The surrogate pair used in toCodePoint(char high, char low) is not valid.");
+            }
         }
 }
 

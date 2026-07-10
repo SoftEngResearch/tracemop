@@ -18,6 +18,8 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 String_UseStringBuilder() {
     event e363 after() returning(String b): 
         call(String.new(StringBuilder)) {
+            RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+            RVMLogging.out.println(Level.CRITICAL, "Using the constructor String(StringBuilder builder) is inefficient. Use toString() method on the StringBuilder.");
         }
     
 }

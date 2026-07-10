@@ -18,9 +18,17 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 EnumSet_NonNull() {
 	event e90 before(Object e) :
 		call(* EnumSet+.add(Object)) && args(e) && condition(e == null) {
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "EnumSet does not permit null.");
 	}
 	event e90 before(Collection c) :
 		call(* EnumSet+.addAll(Collection)) && args(c) {
+		for (Object elem : c) {
+			if (elem == null){
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "EnumSet does not permit null.");
+			}
+		}
 	}
 }
 

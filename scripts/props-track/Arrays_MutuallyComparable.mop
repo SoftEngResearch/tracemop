@@ -23,12 +23,42 @@ Arrays_MutuallyComparable() {
 		(
 			call(void Arrays.sort(Object[], Comparator))
 		) && args(arr, comp) {
+		for (int i = 0; i < arr.length; ++i) {
+			Object o1 = arr[i];
+
+			for (int j = i + 1; j < arr.length; ++j) {
+				Object o2 = arr[j];
+				try {
+					comp.compare(o1, o2);
+					comp.compare(o2, o1);
+				}
+				catch (ClassCastException e) {
+					RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+					RVMLogging.out.println(Level.CRITICAL, i + "-th element and " + j + "-th element are not comparable.");
+				}
+			}
+		}
 	}
 	
 	event e10 before(Object[] arr, int start, int end, Comparator comp) :
 		(
 			call(void Arrays.sort(Object[], int, int, Comparator))
 		) && args(arr, start, end, comp) {
+		for (int i = start; i < end; ++i) {
+			Object o1 = arr[i];
+			
+			for (int j = start + 1; j < end; ++j) {
+				Object o2 = arr[j];
+				try {
+					comp.compare(o1, o2);
+					comp.compare(o2, o1);
+				}
+				catch (ClassCastException e) {
+					RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+					RVMLogging.out.println(Level.CRITICAL, i + "-th element and " + j + "-th element are not comparable.");
+				}
+			}
+		}
 	}
 }
 

@@ -24,11 +24,21 @@ TreeSet_Comparable() {
 		(
 			call(* Collection+.add*(..))
 		) && target(TreeSet) && args(e) {
+		if (!(e instanceof Comparable)) {
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "A non-comparable object is being inserted into a TreeSet object.");
+		}
 	}
 
 	event e379 before(Collection c) :
 		call(* Collection+.addAll(Collection)) &&
 		target(TreeSet) && args(c) {
+		for (Object elem : c) {
+			if (!(elem instanceof Comparable)) {
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "A non-comparable object is being inserted into a TreeSet object.");
+			}
+		}
 	}
 }
 

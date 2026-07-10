@@ -22,6 +22,11 @@ ServerSocket_Port() {
 			call(ServerSocket.new(int, int, InetAddress))
 		) && args(port, ..)
 	{
+		if (0 <= port && port <= 65535)
+			return;
+
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "The specified port " + port + " is out of range; [0 ~ 65535]");
 	}
 }
 

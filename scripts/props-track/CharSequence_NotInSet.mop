@@ -23,9 +23,19 @@ CharSequence_NotInSet() {
 	boolean flag = false;
 	
 	event e29 before() : call(* Set+.add(..)) && args(CharSequence) && !args(String) && !args(CharBuffer) && condition(!flag){
+		flag = true;
+		RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+		RVMLogging.out.println(Level.CRITICAL, "It might not be safe to add a CharSequence instance into a set"); 
 	}
 
 	event e30 before(Collection c) : call(* Set+.addAll(Collection)) && args(c) && condition(!flag){
+		for(Object o : c){
+			if(o instanceof CharSequence && !(o instanceof String) && !(o instanceof CharBuffer)){
+				flag = true;
+				RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+				RVMLogging.out.println(Level.CRITICAL, "It might not be safe to add a CharSequence instance into a set");
+			}
+		} 
 	}
 	
 }

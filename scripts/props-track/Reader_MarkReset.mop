@@ -21,10 +21,14 @@ Reader_MarkReset() {
 	event e230 before(Reader+ r) : 
 		call(* Reader+.mark(..)) && target(r) 
 		&& (target(PushbackReader) || target(InputStreamReader) || target(FileReader) || target(PipedReader)){
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "PushbackReader, InputStreamReader, FileReader and PipedReader do not support mark() and reset().");
 		}
 
 	event e231 before(Reader+ r) : 
 		call(* Reader+.reset(..)) && target(r)
 		&& (target(PushbackReader) || target(InputStreamReader) || target(FileReader) || target(PipedReader)){
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "PushbackReader, InputStreamReader, FileReader and PipedReader do not support mark() and reset().");
 		}
 }

@@ -17,6 +17,8 @@ import com.runtimeverification.rvmonitor.java.rt.RVMLogging.Level;
 System_NullArrayCopy() {
 	event e364 before(Object src, int srcPos, Object dest, int destPos, int length): 
 		call(* System.arraycopy(Object, int, Object, int, int)) && args(src, srcPos, dest, destPos, length) && condition(src == null || dest == null) {
+			RVMLogging.out.println(Level.CRITICAL, __DEFAULT_MESSAGE);
+			RVMLogging.out.println(Level.CRITICAL, "src or dest should not be null.");
 		}
 }
 
