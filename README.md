@@ -2,6 +2,8 @@
 
 This repository allows to do explicit-trace runtime verification, and it is built on top of improved and integrated source code that was forked off the official [JavaMOP](https://github.com/runtimeverification/javamop) and [RV-Monitor](https://github.com/runtimeverification/rv-monitor) repositories. Those repositories are *no longer maintained but we have ensured to preserve all their Java-related functionality here (read on to see how to run TraceMOP to get only those existing functionality)*.
 
+Also, this repository now also contains the source code for Valg, i.e., the selective monitoring technique based on reinforcement learning. Refer to the [instructions here](docs/Valg.md) for details about how to enable Valg.
+
 ## Experimental scripts and data
 
 You can find our experimental scripts and data in this [directory](experiments).
@@ -180,7 +182,7 @@ Check out the [instructions here](docs/AddPluginToPom.md) for more details.
 
 ## Using TraceMOP's Java agent to monitor Maven and non-Maven projects
 
-You can follow the [instructions here](docs/BuildAgent.md) to learn how to build and use TraceMOP's Java agent. Also, follow the [instructions here](docs/Valg.md) to learn how to enable Valg (i.e., selective monitoring).
+You can follow the [instructions here](docs/BuildAgent.md) to learn how to build and use TraceMOP's Java agent. 
 
 ## Output Structure
 
