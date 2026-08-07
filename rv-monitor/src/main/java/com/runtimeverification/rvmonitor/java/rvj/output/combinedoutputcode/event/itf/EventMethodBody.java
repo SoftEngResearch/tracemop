@@ -736,10 +736,20 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
             CodeVarRefExpr monitorref;
             {
                 ifbody.comment("D(X) defineTo:6");
+                CodeVarRefExpr clonesourceref = sourcemonref;
+                if (sourcemonref.getType() instanceof CodeRVType.Interface) {
+                    CodeVariable clonesource = new CodeVariable(
+                            this.getMonitorType(), "sourceMonitor");
+                    ifbody.add(new CodeVarDeclStmt(clonesource,
+                            new CodeCastExpr(this.getMonitorType(),
+                                    sourcemonref)));
+                    clonesourceref = new CodeVarRefExpr(clonesource);
+                }
                 CodeVarDeclStmt decl = new CodeVarDeclStmt(new CodeVariable(
                         this.getMonitorType(), "created"), new CodeCastExpr(
                                 this.getMonitorType(), new CodeMethodInvokeExpr(
-                                        CodeType.object(), sourcemonref, "clone")));
+                                        CodeType.object(), clonesourceref,
+                                        "clone")));
                 ifbody.add(decl);
                 monitorref = new CodeVarRefExpr(decl.getVariable());
 
@@ -1016,6 +1026,13 @@ public class EventMethodBody extends AdviceBody implements ICodeGenerator {
 
                 CodeExpr ifcond = CodeBinOpExpr.isNotNull(sourceresult
                         .getSetOrLeafRef());
+                if (frommonitor && sourceresult.getLeafRef().getType()
+                        instanceof CodeRVType.Interface) {
+                    CodeRVType.Interface itftype = (CodeRVType.Interface) sourceresult
+                            .getLeafRef().getType();
+                    ifcond = new CodeInstanceOfExpr(sourceresult.getLeafRef(),
+                            itftype.getMonitorType());
+                }
                 CodeStmtCollection ifbody;
                 if (frommonitor)
                     ifbody = this.generateCopyStateFromMonitorCode(sourceprms,
