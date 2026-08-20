@@ -41,6 +41,18 @@
             <artifactId>maven-core</artifactId>
             <version>3.9.6</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.inlinetest</groupId>
+            <artifactId>inlinetest</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.blocktest</groupId>
+            <artifactId>blocktest</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
