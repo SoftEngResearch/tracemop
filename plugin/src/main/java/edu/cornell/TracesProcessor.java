@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.blocktest.BTest.*;
+import static org.inlinetest.ITest.*;
+
 public class TracesProcessor {
     private Log log;
     private String output;
@@ -94,7 +97,8 @@ public class TracesProcessor {
                 header = true;
                 continue;
             }
-
+            blocktest().given(line, "4 1 [e42~22, e43~22]").given(IDToTraces, new HashMap<String, String>())
+                    .checkEq(IDToTraces.get("4"), "1 [e42~22, e43~22]");
             String[] parts = line.split(" ", 2);
             if (parts.length != 2)
                 continue;
@@ -121,7 +125,11 @@ public class TracesProcessor {
 
             int totalFreq = 0;
             specToFreq = specToFreq.substring(1, specToFreq.length() - 1); // remove {}
+            itest().given(specToFreq, "{Throwable_InitCauseOnceMonitor=190}")
+                    .checkEq(specToFreq, "Throwable_InitCauseOnceMonitor=190");
             for (String specString : specToFreq.split(", ")) {
+                blocktest().given(specString, "Throwable_InitCauseOnceMonitor=190").given(totalFreq, 42)
+                        .checkEq(totalFreq, 232);
                 parts = specString.split("=", 2);
                 if (parts.length != 2)
                     continue;

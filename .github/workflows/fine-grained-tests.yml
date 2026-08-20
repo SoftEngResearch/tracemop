@@ -1,0 +1,50 @@
+# Based on GitHub's provided Maven workflow
+
+name: Run fine-grained tests
+
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        cache: maven
+    - name: Install inline test
+      run: |
+        git clone https://github.com/EngineeringSoftware/inlinetest.git
+        pushd inlinetest/java
+        mvn clean install
+        popd
+    - name: Install block test
+      run: |
+        git clone https://github.com/SoftEngResearch/blocktests.git
+        pushd blocktests/blocktest
+        mvn clean install
+        popd
+    - name: Install SIT-Runner
+      run: |
+        git clone https://github.com/SoftEngResearch/sit-runner.git
+        pushd sit-runner
+        mvn clean install
+        popd
+    - name: Install plugin
+      run: |
+        pushd plugin
+        mvn clean install
+        popd
+    - name: Run fine-grained tests
+      run: |
+        pushd plugin
+        mvn edu.cornell:sit-runner:1.0-SNAPSHOT:run
+        popd
