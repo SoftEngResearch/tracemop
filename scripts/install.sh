@@ -94,7 +94,7 @@ function install() {
   export PATH=${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/bin:${SCRIPT_DIR}/../javamop/target/release/javamop/javamop/bin:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor-rt.jar:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor.jar:${PATH}
   export CLASSPATH=${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor-rt.jar:${SCRIPT_DIR}/../rv-monitor/target/release/rv-monitor/lib/rv-monitor.jar:${CLASSPATH}
   local props="props"
-  local agent="no-track-no-stats-agent"
+  local agent="no-track-${STATS}-agent"
   if [[ ${TRACK} == "track" || ${SERIES} == true ]]; then
     props="props-track"
     agent="track-no-stats-agent"
