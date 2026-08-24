@@ -78,10 +78,11 @@ function install() {
     STATS="no-stats"
   fi
 
-  if [[ ! -f ${TRACK}-${STATS}-agent.jar ]]; then
+  if [[ ! -f ${SCRIPT_DIR}/.javaparser ]]; then
     # Install TraceMOP's dependency
     echo "Install new JavaParser"
     bash ${SCRIPT_DIR}/install-javaparser.sh
+    touch ${SCRIPT_DIR}/.javaparser
   fi
   
   # Install TraceMOP
