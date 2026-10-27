@@ -106,9 +106,9 @@ function install() {
     pushd resources &> /dev/null
     mkdir -p mop
     cp ../BaseAspect_new.aj mop/BaseAspect.aj
-    ajc mop/BaseAspect.aj
+    JAVA_HOME="${AJC_JAVA_HOME:-$JAVA_HOME}" ajc -1.8 mop/BaseAspect.aj
     
-    ajc TestNameAspect.aj -cp .:${CLASSPATH} -1.8
+    JAVA_HOME="${AJC_JAVA_HOME:-$JAVA_HOME}" ajc TestNameAspect.aj -cp .:${CLASSPATH} -1.8
     mv TestNameAspect.class mop/TestNameAspect.class
 
     zip ../track-no-stats-agent.jar mop/TestNameAspect.class

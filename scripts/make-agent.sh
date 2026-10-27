@@ -127,7 +127,7 @@ function build_agent() {
     echo "Flags for rv-monitor: ${rv_monitor_flag[@]}"
     rv-monitor -merge -d "${props_dir}/classes/mop/" ${props_dir}/*.rvm "${rv_monitor_flag[@]}"
 
-    javac ${props_dir}/classes/mop/*.java
+    javac -source 8 -target 8 ${props_dir}/classes/mop/*.java
     if [ "${mode}" == "verbose" ]; then
         echo "AGENT IS VERBOSE!"
         javamopagent -m -emop ${props_dir}/ ${props_dir}/classes -n ${agent_name} -v
